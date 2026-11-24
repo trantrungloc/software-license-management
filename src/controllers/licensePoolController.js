@@ -352,6 +352,7 @@ async function checkRenewalPrerequisites(req, res, next) {
 
     const availableContracts = await prisma.contract.findMany({
       where: {
+        status: 'SIGNED',
         request: {
           software_id: pool.software_id,
           request_type: 'RENEWAL',
@@ -412,6 +413,13 @@ async function renewLicensePool(req, res, next) {
       return res.status(400).json({
         success: false,
         message: 'Hợp đồng mua sắm/gia hạn được chỉ định không tồn tại trong hệ thống.'
+      });
+    }
+
+    if (existingContract.status !== 'SIGNED') {
+      return res.status(400).json({
+        success: false,
+        message: `Hợp đồng [${existingContract.contract_number}] đang ở trạng thái 'Chờ ký'. Bắt buộc phải ký hợp đồng trước khi thực hiện gia hạn bản quyền.`
       });
     }
 

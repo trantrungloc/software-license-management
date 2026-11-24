@@ -201,33 +201,45 @@ async function approveRequest(req, res, next) {
         }
       });
 
-      // Nếu là đề xuất gia hạn (RENEWAL), tạo Hợp đồng mua sắm/gia hạn đã ký kết để mở khóa quyền gia hạn
-      if (request.request_type === 'RENEWAL') {
-        const existingContract = await tx.contract.findFirst({
-          where: { request_id: request.request_id }
+      // Khi phiếu đề xuất được duyệt, tự động tạo Hợp đồng mua sắm ở trạng thái CHỜ KÝ (PENDING)
+      const existingContract = await tx.contract.findFirst({
+        where: { request_id: request.request_id }
+      });
+      if (!existingContract) {
+        const pool = await tx.licensePool.findFirst({
+          where: { software_id: request.software_id },
+          include: { contract: true }
         });
-        if (!existingContract) {
-          const pool = await tx.licensePool.findFirst({
-            where: { software_id: request.software_id },
-            include: { contract: true }
+        let vendorId = pool?.contract?.vendor_id;
+        if (!vendorId) {
+          const anyVendor = await tx.vendor.findFirst();
+          vendorId = anyVendor ? anyVendor.vendor_id : null;
+        }
+        if (vendorId) {
+          const prefix = request.request_type === 'RENEWAL' ? 'HD-GH' : 'HD-MS';
+          const contractNumber = `${prefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+          const unitPrice = 2500000;
+          const totalCost = (request.requested_seats || 1) * unitPrice;
+
+          await tx.contract.create({
+            data: {
+              contract_number: contractNumber,
+              vendor_id: vendorId,
+              request_id: request.request_id,
+              signed_date: null,
+              total_cost: totalCost > 0 ? totalCost : 25000000,
+              status: 'PENDING'
+            }
           });
-          let vendorId = pool?.contract?.vendor_id;
-          if (!vendorId) {
-            const anyVendor = await tx.vendor.findFirst();
-            vendorId = anyVendor ? anyVendor.vendor_id : null;
-          }
-          if (vendorId) {
-            const contractNumber = `HD-GH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-            await tx.contract.create({
-              data: {
-                contract_number: contractNumber,
-                vendor_id: vendorId,
-                request_id: request.request_id,
-                signed_date: new Date(),
-                total_cost: 25000000
-              }
-            });
-          }
+
+          await tx.auditAlertLog.create({
+            data: {
+              license_id: pool ? pool.license_id : null,
+              user_id: approverId || null,
+              action_type: 'CREATE_CONTRACT_DRAFT',
+              description: `Khởi tạo Hợp đồng: Đã lập hợp đồng dự thảo [${contractNumber}] ở trạng thái CHỜ KÝ liên kết với phiếu đề xuất [${request.request_id.slice(0, 8)}]. Cần hoàn tất ký hợp đồng với đối tác.`
+            }
+          });
         }
       }
 

@@ -126,6 +126,10 @@
             <p class="text-xs text-slate-500">Quản lý các gói bản quyền tổng của trường, mã hóa AES-256 và theo dõi hạn dùng</p>
           </div>
           <div class="flex items-center space-x-3">
+            <button onclick="openAllocateModal()" id="btn-pool-allocate" class="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              <span>+ Phân bổ cho Khoa</span>
+            </button>
             <button onclick="triggerCronScan()" id="cron-scan-btn" class="inline-flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
               <i data-lucide="refresh-cw" id="cron-scan-icon" class="w-3.5 h-3.5"></i>
               <span>⚡ Chạy quét hạn ngay</span>
@@ -164,6 +168,12 @@
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Phân bổ Hạn mức Cấp 1 (Trường -> Khoa)</h2>
             <p class="text-xs text-slate-500">Danh sách các gói bản quyền đã được Chuyên viên CNTT trích từ Kho tổng về các Khoa</p>
+          </div>
+          <div id="alloc-header-actions">
+            <button onclick="openAllocateModal()" class="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              <span>+ Phân bổ cho Khoa</span>
+            </button>
           </div>
         </div>
 
@@ -244,6 +254,8 @@
                   <th class="px-4 py-2.5">Ngày ký</th>
                   <th class="px-4 py-2.5">Tổng giá trị</th>
                   <th class="px-4 py-2.5">Gói bản quyền liên kết</th>
+                  <th class="px-4 py-2.5">Trạng thái</th>
+                  <th class="px-4 py-2.5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="contracts-table-body" class="divide-y divide-slate-100">
@@ -509,11 +521,11 @@
       </div>
 
       <form id="allocate-form" onsubmit="handleAllocateSubmit(event)" class="space-y-4">
-        <input type="hidden" id="alloc-license-id">
-        
         <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Gói bản quyền</label>
-          <input type="text" id="alloc-software-name" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 font-medium cursor-not-allowed">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Gói bản quyền nguồn trong Kho tổng <span class="text-red-500">*</span></label>
+          <select id="alloc-license-select" required onchange="handleAllocLicenseChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium text-slate-800">
+            <!-- Nạp danh sách gói bản quyền -->
+          </select>
         </div>
 
         <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center justify-between">
@@ -1360,11 +1372,15 @@
       const contractsTabNav = document.getElementById('nav-contracts');
       const auditTabNav = document.getElementById('nav-audit');
       const analyticsTabNav = document.getElementById('nav-analytics');
+      const allocHeaderActions = document.getElementById('alloc-header-actions');
+      const btnPoolAllocate = document.getElementById('btn-pool-allocate');
 
       if (isDeptRep) {
         if (contractsTabNav) contractsTabNav.classList.add('hidden');
         if (auditTabNav) auditTabNav.classList.add('hidden');
         if (analyticsTabNav) analyticsTabNav.classList.add('hidden');
+        if (allocHeaderActions) allocHeaderActions.classList.add('hidden');
+        if (btnPoolAllocate) btnPoolAllocate.classList.add('hidden');
 
         // Tự động chuyển về tab allocations nếu đang đứng ở tab bị ẩn
         const activeTab = document.querySelector('section[id^="tab-"]:not(.hidden)');
@@ -1390,6 +1406,8 @@
         if (contractsTabNav) contractsTabNav.classList.remove('hidden');
         if (auditTabNav) auditTabNav.classList.remove('hidden');
         if (analyticsTabNav) analyticsTabNav.classList.remove('hidden');
+        if (allocHeaderActions) allocHeaderActions.classList.remove('hidden');
+        if (btnPoolAllocate) btnPoolAllocate.classList.remove('hidden');
       }
     }
 
@@ -1769,18 +1787,58 @@
         const json = await res.json();
         if (json.success) {
           const tbody = document.getElementById('contracts-table-body');
-          tbody.innerHTML = json.data.map(c => `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="px-4 py-2.5 font-mono text-xs font-bold text-blue-700">${c.contract_number}</td>
-              <td class="px-4 py-2.5 font-semibold text-slate-900">${c.vendor ? c.vendor.vendor_name : 'N/A'}</td>
-              <td class="px-4 py-2.5 text-slate-600 text-xs">${new Date(c.signed_date).toLocaleDateString('vi-VN')}</td>
-              <td class="px-4 py-2.5 font-semibold text-slate-900 text-xs">${Number(c.total_cost).toLocaleString('vi-VN')} đ</td>
-              <td class="px-4 py-2.5 text-xs text-slate-600">${c.license_pools ? c.license_pools.length : 0} gói bản quyền</td>
-            </tr>
-          `).join('');
+          if (!json.data || json.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400">Chưa có hợp đồng mua sắm nào trong hệ thống.</td></tr>';
+            return;
+          }
+          const canSign = currentUser && ['ADMIN', 'IT_MANAGER', 'IT_STAFF'].includes(currentUser.role_code);
+          tbody.innerHTML = json.data.map(c => {
+            const isSigned = c.status === 'SIGNED' || !!c.signed_date;
+            const signedDateText = c.signed_date ? new Date(c.signed_date).toLocaleDateString('vi-VN') : '<span class="text-slate-400 italic">Chưa ký</span>';
+            const statusBadge = isSigned
+              ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i>Đã ký</span>`
+              : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Chờ ký</span>`;
+            const actionBtn = isSigned
+              ? `<span class="text-xs text-slate-400">Đã hoàn tất</span>`
+              : (canSign
+                  ? `<button onclick="handleSignContract('${c.contract_id}', '${c.contract_number}')" class="text-xs px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow-xs inline-flex items-center gap-1"><i data-lucide="file-check" class="w-3 h-3"></i><span>Ký hợp đồng</span></button>`
+                  : `<span class="text-xs text-amber-600 italic">Chờ IT ký</span>`
+                );
+            return `
+              <tr class="hover:bg-slate-50 transition">
+                <td class="px-4 py-2.5 font-mono text-xs font-bold text-blue-700">${c.contract_number}</td>
+                <td class="px-4 py-2.5 font-semibold text-slate-900">${c.vendor ? c.vendor.vendor_name : 'N/A'}</td>
+                <td class="px-4 py-2.5 text-slate-600 text-xs">${signedDateText}</td>
+                <td class="px-4 py-2.5 font-semibold text-slate-900 text-xs">${Number(c.total_cost).toLocaleString('vi-VN')} đ</td>
+                <td class="px-4 py-2.5 text-xs text-slate-600">${c.license_pools ? c.license_pools.length : 0} gói bản quyền</td>
+                <td class="px-4 py-2.5 whitespace-nowrap">${statusBadge}</td>
+                <td class="px-4 py-2.5 text-right whitespace-nowrap">${actionBtn}</td>
+              </tr>
+            `;
+          }).join('');
+          lucide.createIcons();
         }
       } catch (e) {
         console.error(e);
+      }
+    }
+
+    async function handleSignContract(contractId, contractNum) {
+      if (!confirm(`Xác nhận ký kết hợp đồng mua sắm [${contractNum}] với Nhà cung cấp?`)) return;
+      try {
+        const res = await authFetch(`/api/contracts/${contractId}/sign`, {
+          method: 'POST'
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          await fetchContracts();
+          await fetchLicensePools();
+        } else {
+          showToast(json.message || 'Lỗi khi ký hợp đồng.', 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối máy chủ: ' + e.message, 'error');
       }
     }
 
@@ -2081,20 +2139,48 @@
     // ==============================================================================
 
     // Modal Phân bổ Khoa
-    function openAllocateModal(poolId) {
-      selectedPoolForAlloc = currentPools.find(p => p.license_id === poolId);
-      if (!selectedPoolForAlloc) return;
+    function openAllocateModal(poolId = null) {
+      const select = document.getElementById('alloc-license-select');
+      const activePools = currentPools ? currentPools.filter(p => p.status !== 'EXPIRED') : [];
 
-      document.getElementById('alloc-license-id').value = poolId;
-      document.getElementById('alloc-software-name').value = selectedPoolForAlloc.software.software_name;
-      document.getElementById('alloc-available-seats').innerText = `${selectedPoolForAlloc.available_seats} seats`;
+      if (!activePools || activePools.length === 0) {
+        showToast('Kho tổng hiện không có gói bản quyền nào còn hạn để phân bổ.', 'warning');
+        return;
+      }
+
+      select.innerHTML = activePools.map(p => `
+        <option value="${p.license_id}" ${p.license_id === poolId ? 'selected' : ''} ${p.available_seats === 0 ? 'disabled' : ''}>
+          ${p.software ? p.software.software_name : 'Bản quyền'} (${p.software ? p.software.version : ''}) - Khả dụng: ${p.available_seats}/${p.total_seats} seats (${p.status})
+        </option>
+      `).join('');
+
+      let targetId = poolId;
+      if (!targetId || !activePools.some(p => p.license_id === targetId)) {
+        const firstAvail = activePools.find(p => p.available_seats > 0) || activePools[0];
+        targetId = firstAvail ? firstAvail.license_id : '';
+      }
+      select.value = targetId;
+
+      handleAllocLicenseChange();
+
       document.getElementById('alloc-seats-input').value = '';
-      document.getElementById('alloc-seats-input').max = selectedPoolForAlloc.available_seats;
       document.getElementById('alloc-error-message').classList.add('hidden');
       document.getElementById('alloc-submit-btn').disabled = false;
 
       document.getElementById('allocate-modal').classList.remove('hidden');
       lucide.createIcons();
+    }
+
+    function handleAllocLicenseChange() {
+      const select = document.getElementById('alloc-license-select');
+      const poolId = select ? select.value : null;
+      selectedPoolForAlloc = currentPools ? currentPools.find(p => p.license_id === poolId) : null;
+      if (selectedPoolForAlloc) {
+        document.getElementById('alloc-available-seats').innerText = `${selectedPoolForAlloc.available_seats} seats`;
+        document.getElementById('alloc-seats-input').max = selectedPoolForAlloc.available_seats;
+      } else {
+        document.getElementById('alloc-available-seats').innerText = '0 seats';
+      }
     }
 
     function validateAllocateSeats(val) {
@@ -2115,7 +2201,7 @@
 
     async function handleAllocateSubmit(e) {
       e.preventDefault();
-      const license_id = document.getElementById('alloc-license-id').value;
+      const license_id = document.getElementById('alloc-license-select').value;
       const department_id = document.getElementById('alloc-dept-select').value;
       const allocated_seats = document.getElementById('alloc-seats-input').value;
 

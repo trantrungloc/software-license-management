@@ -14,6 +14,9 @@ router.get('/', contractController.getContracts);
 // Tạo mới hợp đồng
 router.post('/', contractController.createContract);
 
+// Ký kết hợp đồng (Chờ ký -> Đã ký)
+router.post('/:id/sign', contractController.signContract);
+
 // Lấy chi tiết 1 hợp đồng
 router.get('/:id', contractController.getContractById);
 

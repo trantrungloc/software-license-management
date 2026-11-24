@@ -157,12 +157,13 @@ model LicenseRequest {
 // 8. CONTRACTS — Bảng Hợp đồng Mua sắm Bản quyền
 // ==============================================================================
 model Contract {
-  contract_id     String   @id @default(uuid()) @map("contract_id")
-  vendor_id       String   @map("vendor_id")
-  request_id      String?  @map("request_id")
-  contract_number String   @unique @map("contract_number")
-  signed_date     DateTime @map("signed_date")
-  total_cost      Decimal  @map("total_cost") @db.Decimal(15, 2)
+  contract_id     String    @id @default(uuid()) @map("contract_id")
+  vendor_id       String    @map("vendor_id")
+  request_id      String?   @map("request_id")
+  contract_number String    @unique @map("contract_number")
+  signed_date     DateTime? @map("signed_date")
+  total_cost      Decimal   @map("total_cost") @db.Decimal(15, 2)
+  status          String    @default("PENDING") @map("status") // PENDING (Chờ ký), SIGNED (Đã ký)
 
   // Quan hệ
   vendor            Vendor           @relation(fields: [vendor_id], references: [vendor_id], onDelete: NoAction, onUpdate: NoAction)
