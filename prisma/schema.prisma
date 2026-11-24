@@ -1,0 +1,282 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+// ==============================================================================
+// 1. ROLES — Bảng Vai trò Người dùng
+// ==============================================================================
+model Role {
+  role_id   String @id @default(uuid()) @map("role_id")
+  role_code String @unique @map("role_code") // ADMIN, IT_MANAGER, IT_STAFF, DEPT_REP
+  role_name String @map("role_name")
+
+  // Quan hệ
+  users User[]
+
+  @@map("roles")
+}
+
+// ==============================================================================
+// 2. DEPARTMENTS — Bảng Khoa / Phòng ban chức năng
+// ==============================================================================
+model Department {
+  department_id   String  @id @default(uuid()) @map("department_id")
+  department_code String  @unique @map("department_code") // CNTT, KT, NN,...
+  department_name String  @map("department_name")
+  manager_user_id String? @map("manager_user_id")
+  is_active       Boolean @default(true) @map("is_active")
+
+  // Quan hệ
+  manager               User?                  @relation("DepartmentManager", fields: [manager_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  users                 User[]                 @relation("DepartmentMembers")
+  devices               Device[]
+  license_requests      LicenseRequest[]
+  department_allocations DepartmentAllocation[]
+
+  @@map("departments")
+}
+
+// ==============================================================================
+// 3. USERS — Bảng Tài khoản Người dùng
+// ==============================================================================
+model User {
+  user_id       String  @id @default(uuid()) @map("user_id")
+  department_id String? @map("department_id")
+  role_id       String  @map("role_id")
+  full_name     String  @map("full_name")
+  email         String  @unique @map("email")
+  password_hash String  @map("password_hash")
+  is_active     Boolean @default(true) @map("is_active")
+
+  // Quan hệ
+  role               Role               @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction)
+  department         Department?        @relation("DepartmentMembers", fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction)
+  managed_department Department[]       @relation("DepartmentManager")
+  managed_devices    Device[]           @relation("DeviceManager")
+  license_assignments LicenseAssignment[]
+  requested_licenses LicenseRequest[]   @relation("UserRequested")
+  approved_licenses  LicenseRequest[]   @relation("UserApproved")
+  renewal_histories  RenewalHistory[]
+  audit_alert_logs   AuditAlertLog[]
+
+  @@map("users")
+}
+
+// ==============================================================================
+// 4. DEVICES — Bảng Thiết bị / Máy trạm phòng Lab
+// ==============================================================================
+model Device {
+  device_id       String  @id @default(uuid()) @map("device_id")
+  department_id   String  @map("department_id")
+  manager_user_id String? @map("manager_user_id")
+  device_code     String  @unique @map("device_code") // LAB-A301-PC01
+  device_name     String  @map("device_name")
+  device_type     String  @default("DESKTOP") @map("device_type") // DESKTOP, LAPTOP, SERVER
+  room_location   String  @map("room_location") // Phòng Lab A301
+  mac_address     String? @map("mac_address")
+  ip_address      String? @map("ip_address")
+  os_platform     String  @map("os_platform") // Windows 11 Pro, Ubuntu 22.04,...
+  hardware_specs  String? @map("hardware_specs") // Core i7, 16GB RAM, 512GB SSD
+  status          String  @default("ACTIVE") @map("status") // ACTIVE, MAINTENANCE, DISPOSED
+
+  // Quan hệ
+  department          Department          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction)
+  manager             User?               @relation("DeviceManager", fields: [manager_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  license_assignments LicenseAssignment[]
+
+  @@map("devices")
+}
+
+// ==============================================================================
+// 5. VENDORS — Bảng Nhà cung cấp Bản quyền Phần mềm
+// ==============================================================================
+model Vendor {
+  vendor_id      String  @id @default(uuid()) @map("vendor_id")
+  vendor_name    String  @map("vendor_name")
+  contact_person String? @map("contact_person")
+  contact_email  String? @map("contact_email")
+  phone          String? @map("phone")
+
+  // Quan hệ
+  contracts Contract[]
+
+  @@map("vendors")
+}
+
+// ==============================================================================
+// 6. SOFTWARES — Bảng Danh mục Phần mềm
+// ==============================================================================
+model Software {
+  software_id    String  @id @default(uuid()) @map("software_id")
+  software_name  String  @map("software_name")
+  version        String  @map("version")
+  platform       String  @map("platform") // Windows, macOS, Linux, Web
+  is_open_source Boolean @default(false) @map("is_open_source")
+
+  // Quan hệ
+  license_pools    LicensePool[]
+  license_requests LicenseRequest[]
+
+  @@map("softwares")
+}
+
+// ==============================================================================
+// 7. LICENSE_REQUESTS — Bảng Phiếu Đề xuất Bản quyền
+// ==============================================================================
+model LicenseRequest {
+  request_id      String   @id @default(uuid()) @map("request_id")
+  department_id   String   @map("department_id")
+  software_id     String   @map("software_id")
+  requested_by    String   @map("requested_by")
+  approved_by     String?  @map("approved_by")
+  request_type    String   @map("request_type") // NEW, RENEWAL, ADD_SEATS
+  requested_seats Int      @map("requested_seats")
+  purpose         String?  @map("purpose")
+  status          String   @default("PENDING") @map("status") // PENDING, APPROVED, REJECTED
+  created_at      DateTime @default(now()) @map("created_at")
+
+  // Quan hệ
+  department             Department             @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction)
+  software               Software               @relation(fields: [software_id], references: [software_id], onDelete: NoAction, onUpdate: NoAction)
+  requester              User                   @relation("UserRequested", fields: [requested_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  approver               User?                  @relation("UserApproved", fields: [approved_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  contracts              Contract[]
+  department_allocations DepartmentAllocation[]
+
+  @@map("license_requests")
+}
+
+// ==============================================================================
+// 8. CONTRACTS — Bảng Hợp đồng Mua sắm Bản quyền
+// ==============================================================================
+model Contract {
+  contract_id     String   @id @default(uuid()) @map("contract_id")
+  vendor_id       String   @map("vendor_id")
+  request_id      String?  @map("request_id")
+  contract_number String   @unique @map("contract_number")
+  signed_date     DateTime @map("signed_date")
+  total_cost      Decimal  @map("total_cost") @db.Decimal(15, 2)
+
+  // Quan hệ
+  vendor            Vendor           @relation(fields: [vendor_id], references: [vendor_id], onDelete: NoAction, onUpdate: NoAction)
+  request           LicenseRequest?  @relation(fields: [request_id], references: [request_id], onDelete: NoAction, onUpdate: NoAction)
+  license_pools     LicensePool[]
+  renewal_histories RenewalHistory[]
+
+  @@map("contracts")
+}
+
+// ==============================================================================
+// 9. LICENSE_POOLS — Bảng Kho Gói Bản quyền Tổng của Trường
+// ==============================================================================
+model LicensePool {
+  license_id            String   @id @default(uuid()) @map("license_id")
+  software_id           String   @map("software_id")
+  contract_id           String?  @map("contract_id")
+  license_type          String   @map("license_type") // PERPETUAL, SUBSCRIPTION, ACADEMIC
+  license_key_encrypted String   @map("license_key_encrypted") @db.Text
+  total_seats           Int      @map("total_seats")
+  available_seats       Int      @map("available_seats")
+  start_date            DateTime @map("start_date")
+  expiry_date           DateTime @map("expiry_date")
+  status                String   @default("ACTIVE") @map("status") // ACTIVE, EXPIRING_SOON, EXPIRED, DEPLETED
+
+  // Quan hệ
+  software               Software               @relation(fields: [software_id], references: [software_id], onDelete: NoAction, onUpdate: NoAction)
+  contract               Contract?              @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
+  department_allocations DepartmentAllocation[]
+  renewal_histories      RenewalHistory[]
+  audit_alert_logs       AuditAlertLog[]
+
+  @@map("license_pools")
+}
+
+// ==============================================================================
+// 10. DEPARTMENT_ALLOCATIONS — Bảng Phân bổ Cấp 1 (Trường -> Khoa)
+// ==============================================================================
+model DepartmentAllocation {
+  allocation_id   String   @id @default(uuid()) @map("allocation_id")
+  license_id      String   @map("license_id")
+  department_id   String   @map("department_id")
+  request_id      String?  @map("request_id")
+  allocated_seats Int      @map("allocated_seats")
+  used_seats      Int      @default(0) @map("used_seats")
+  allocated_date  DateTime @default(now()) @map("allocated_date")
+  status          String   @default("ACTIVE") @map("status") // ACTIVE, REVOKED
+
+  // Quan hệ
+  license_pool        LicensePool         @relation(fields: [license_id], references: [license_id], onDelete: NoAction, onUpdate: NoAction)
+  department          Department          @relation(fields: [department_id], references: [department_id], onDelete: NoAction, onUpdate: NoAction)
+  request             LicenseRequest?     @relation(fields: [request_id], references: [request_id], onDelete: NoAction, onUpdate: NoAction)
+  license_assignments LicenseAssignment[]
+
+  @@map("department_allocations")
+}
+
+// ==============================================================================
+// 11. LICENSE_ASSIGNMENTS — Bảng Phân bổ Cấp 2 (Khoa -> Giảng viên / Máy Lab)
+// ==============================================================================
+model LicenseAssignment {
+  assignment_id    String    @id @default(uuid()) @map("assignment_id")
+  allocation_id    String    @map("allocation_id")
+  target_type      String    @map("target_type") // USER, DEVICE
+  assigned_user_id String?   @map("assigned_user_id")
+  device_id        String?   @map("device_id")
+  seats_consumed   Int       @default(1) @map("seats_consumed")
+  assigned_at      DateTime  @default(now()) @map("assigned_at")
+  revoked_at       DateTime? @map("revoked_at")
+  status           String    @default("ACTIVE") @map("status") // ACTIVE, REVOKED
+
+  // Quan hệ
+  allocation    DepartmentAllocation @relation(fields: [allocation_id], references: [allocation_id], onDelete: NoAction, onUpdate: NoAction)
+  assigned_user User?                @relation(fields: [assigned_user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  device        Device?              @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("license_assignments")
+}
+
+// ==============================================================================
+// 12. RENEWAL_HISTORIES — Bảng Lịch sử Gia hạn Bản quyền
+// ==============================================================================
+model RenewalHistory {
+  renewal_id      String   @id @default(uuid()) @map("renewal_id")
+  license_id      String   @map("license_id")
+  contract_id     String?  @map("contract_id")
+  renewed_by      String   @map("renewed_by")
+  old_expiry_date DateTime @map("old_expiry_date")
+  new_expiry_date DateTime @map("new_expiry_date")
+  renewal_cost    Decimal  @map("renewal_cost") @db.Decimal(15, 2)
+  renewed_at      DateTime @default(now()) @map("renewed_at")
+
+  // Quan hệ
+  license_pool LicensePool @relation(fields: [license_id], references: [license_id], onDelete: NoAction, onUpdate: NoAction)
+  contract     Contract?   @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
+  renewer      User        @relation(fields: [renewed_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("renewal_histories")
+}
+
+// ==============================================================================
+// 13. AUDIT_ALERT_LOGS — Bảng Nhật ký Kiểm toán & Cảnh báo Hạn dùng
+// ==============================================================================
+model AuditAlertLog {
+  log_id      String   @id @default(uuid()) @map("log_id")
+  license_id  String?  @map("license_id")
+  user_id     String?  @map("user_id")
+  action_type String   @map("action_type") // REVEAL_KEY, EXPIRING_ALERT, EXPIRED_ALERT, ALLOCATE, ASSIGN, REVOKE
+  description String   @map("description")
+  created_at  DateTime @default(now()) @map("created_at")
+
+  // Quan hệ
+  license_pool LicensePool? @relation(fields: [license_id], references: [license_id], onDelete: NoAction, onUpdate: NoAction)
+  user         User?        @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("audit_alert_logs")
+}

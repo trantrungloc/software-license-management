@@ -1,0 +1,2704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SALM — Quản lý Bản quyền Phần mềm Trường học</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+    
+    /* Refined Utilitarian Badges */
+    .badge-safe { background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+    .badge-warn-far { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-warn-near { background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+    .badge-critical { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-expired { background-color: #f4f4f5; color: #71717a; border: 1px solid #d4d4d8; text-decoration: line-through; }
+    .badge-revoked { background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+    /* Hairline borders & table crispness */
+    .table-hairline th, .table-hairline td { border-bottom: 1px solid #f1f5f9; }
+    .table-hairline tr:hover td { background-color: #f8fafc; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ============================================================================== -->
+  <!-- HEADER & NAVBAR -->
+  <!-- ============================================================================== -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-15 sm:h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">SALM — University Portal</h1>
+          <p class="text-xs text-slate-500">Hệ thống Quản lý Bản quyền Phần mềm Trường học</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-2 bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>SQL Server Connected</span>
+        </div>
+        <div id="user-header-container" class="flex items-center space-x-3 border-l border-slate-200 pl-4">
+          <button onclick="openLoginModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition inline-flex items-center gap-1.5">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+            <span>Đăng nhập</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================================== -->
+  <!-- MAIN CONTAINER (SIDEBAR + CONTENT) -->
+  <!-- ============================================================================== -->
+  <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 w-full flex-1 flex flex-col md:flex-row gap-5">
+
+    <!-- SIDEBAR -->
+    <aside class="w-full md:w-56 lg:w-60 flex-shrink-0 space-y-2 sticky top-19 self-start">
+      <nav class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-1">
+        <button onclick="switchTab('pools')" id="nav-pools" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-50 text-blue-700">
+          <i data-lucide="boxes" class="w-4 h-4"></i>
+          <span>Kho bản quyền</span>
+        </button>
+        <button onclick="switchTab('allocations')" id="nav-allocations" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="network" class="w-4 h-4"></i>
+          <span>Hạn mức Khoa</span>
+        </button>
+        <button onclick="switchTab('assignments')" id="nav-assignments" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="user-check" class="w-4 h-4"></i>
+          <span>Cấp phát GV/Lab</span>
+        </button>
+        <button onclick="switchTab('contracts')" id="nav-contracts" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>Hợp đồng mua sắm</span>
+        </button>
+        <button onclick="switchTab('requests')" id="nav-requests" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          <span>Phiếu Đề xuất</span>
+        </button>
+        <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>Báo cáo Thống kê</span>
+        </button>
+        <button onclick="switchTab('audit')" id="nav-audit" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span> Nhật ký Kiểm toán</span>
+        </button>
+      </nav>
+
+     
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 min-w-0 space-y-4">
+
+      <!-- ============================================================================== -->
+      <!-- BANNER PHÂN BIỆT VAI TRÒ (ROLE BANNER) -->
+      <!-- ============================================================================== -->
+      <div id="role-banner" class="hidden p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div class="flex items-center space-x-3">
+          <div id="role-banner-icon" class="p-2.5 rounded-xl text-white shadow-xs"></div>
+          <div>
+            <div id="role-banner-title" class="font-bold text-sm text-slate-900"></div>
+            <div id="role-banner-desc" class="text-xs text-slate-600 mt-0.5"></div>
+          </div>
+        </div>
+        <div id="role-banner-badge" class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"></div>
+      </div>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 1: KHO BẢN QUYỀN TỔNG (LICENSE_POOLS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-pools" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Kho Gói Bản quyền Tổng (License Pools)</h2>
+            <p class="text-xs text-slate-500">Quản lý các gói bản quyền tổng của trường, mã hóa AES-256 và theo dõi hạn dùng</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button onclick="triggerCronScan()" id="cron-scan-btn" class="inline-flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
+              <i data-lucide="refresh-cw" id="cron-scan-icon" class="w-3.5 h-3.5"></i>
+              <span>⚡ Chạy quét hạn ngay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BẢNG DANH SÁCH LICENSE POOLS -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Phần mềm & Phiên bản</th>
+                  <th class="px-4 py-2.5">Loại cấp phép</th>
+                  <th class="px-4 py-2.5">Khóa bản quyền (Masked)</th>
+                  <th class="px-4 py-2.5">Hạn mức (Trống / Tổng)</th>
+                  <th class="px-4 py-2.5">Hạn dùng</th>
+                  <th class="px-4 py-2.5">Trạng thái</th>
+                  <th class="px-4 py-2.5 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="pools-table-body" class="divide-y divide-slate-100 font-normal">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 2: PHÂN BỔ CẤP 1 (DEPARTMENT_ALLOCATIONS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-allocations" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Phân bổ Hạn mức Cấp 1 (Trường -> Khoa)</h2>
+            <p class="text-xs text-slate-500">Danh sách các gói bản quyền đã được Chuyên viên CNTT trích từ Kho tổng về các Khoa</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Khoa nhận</th>
+                  <th class="px-4 py-2.5">Phần mềm</th>
+                  <th class="px-4 py-2.5">Tỷ lệ sử dụng (Đã gán / Cấp)</th>
+                  <th class="px-4 py-2.5">Ngày phân bổ</th>
+                  <th class="px-4 py-2.5">Trạng thái</th>
+                  <th class="px-4 py-2.5 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="allocations-table-body" class="divide-y divide-slate-100">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 3: CẤP PHÁT CẤP 2 (LICENSE_ASSIGNMENTS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-assignments" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Cấp phát Cấp 2 cho Giảng viên & Máy trạm Lab</h2>
+            <p class="text-xs text-slate-500">Quản lý phân bổ chi tiết và thực hiện Thu hồi (REVOKED) hoàn trả hạn mức về quỹ Khoa</p>
+          </div>
+          <button onclick="openAssignModal()" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>Cấp phát chi tiết</span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Đối tượng nhận</th>
+                  <th class="px-4 py-2.5">Loại</th>
+                  <th class="px-4 py-2.5">Phần mềm & Khoa</th>
+                  <th class="px-4 py-2.5">Thời điểm cấp</th>
+                  <th class="px-4 py-2.5">Trạng thái</th>
+                  <th class="px-4 py-2.5 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="assignments-table-body" class="divide-y divide-slate-100">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 4: HỢP ĐỒNG (CONTRACTS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-contracts" class="space-y-4 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Danh sách Hợp đồng Mua sắm (Contracts)</h2>
+            <p class="text-xs text-slate-500">Các hợp đồng bản quyền ký kết với Nhà cung cấp (Microsoft, JetBrains, Adobe)</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Số hợp đồng</th>
+                  <th class="px-4 py-2.5">Nhà cung cấp</th>
+                  <th class="px-4 py-2.5">Ngày ký</th>
+                  <th class="px-4 py-2.5">Tổng giá trị</th>
+                  <th class="px-4 py-2.5">Gói bản quyền liên kết</th>
+                </tr>
+              </thead>
+              <tbody id="contracts-table-body" class="divide-y divide-slate-100">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 5: PHIẾU ĐỀ XUẤT BẢN QUYỀN (LICENSE_REQUESTS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-requests" class="space-y-4 hidden">
+        <!-- STATS CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Chờ phê duyệt</p>
+              <h3 id="stat-pending-requests" class="text-xl sm:text-2xl font-bold text-amber-600 mt-1">0</h3>
+            </div>
+            <div class="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+              <i data-lucide="clock" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Đã phê duyệt</p>
+              <h3 id="stat-approved-requests" class="text-xl sm:text-2xl font-bold text-emerald-600 mt-1">0</h3>
+            </div>
+            <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Đã từ chối</p>
+              <h3 id="stat-rejected-requests" class="text-xl sm:text-2xl font-bold text-red-600 mt-1">0</h3>
+            </div>
+            <div class="p-2.5 bg-red-50 text-red-600 rounded-xl">
+              <i data-lucide="x-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Luồng Đề xuất & Phê duyệt Bản quyền</h2>
+            <p class="text-xs text-slate-500">Đại diện khoa lập phiếu xin cấp mới / gia hạn; Quản lý CNTT đối chiếu tồn kho để Duyệt hoặc Từ chối</p>
+          </div>
+          <button onclick="openCreateRequestModal()" class="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition">
+            <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+            <span>Lập Đề Xuất Mới</span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Mã phiếu</th>
+                  <th class="px-4 py-2.5">Khoa yêu cầu</th>
+                  <th class="px-4 py-2.5">Phần mềm & Loại</th>
+                  <th class="px-4 py-2.5">Số seat</th>
+                  <th class="px-4 py-2.5">Mục đích / Lý do</th>
+                  <th class="px-4 py-2.5">Người đề xuất</th>
+                  <th class="px-4 py-2.5">Trạng thái</th>
+                  <th class="px-4 py-2.5 text-right">Thao tác (IT Manager)</th>
+                </tr>
+              </thead>
+              <tbody id="requests-table-body" class="divide-y divide-slate-100">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 6: BÁO CÁO THỐNG KÊ (ANALYTICS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-analytics" class="space-y-4 hidden">
+        <div class="bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Báo cáo Quản trị Tài sản Bản quyền Toàn trường</h2>
+            <p class="text-xs text-slate-500">Tổng hợp ngân sách đầu tư, hạn mức cấp phát, và tỷ lệ sử dụng thực tế của các Khoa</p>
+          </div>
+          <button onclick="fetchAnalytics()" class="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Cập nhật số liệu</span>
+          </button>
+        </div>
+
+        <!-- 4 THẺ KPIS TOÀN TRƯỜNG -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Tổng ngân sách đầu tư</span>
+              <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <h3 id="kpi-total-budget" class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">0 đ</h3>
+            <p class="text-[11px] text-slate-400 mt-1">Bao gồm hợp đồng gốc & gia hạn</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Hạn mức toàn trường</span>
+              <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <h3 id="kpi-total-seats" class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">0 seats</h3>
+            <p id="kpi-seats-sub" class="text-[11px] text-slate-400 mt-1">Đã phân bổ 0 / Khả dụng 0</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Tỷ lệ lấp đầy thực tế</span>
+              <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <h3 id="kpi-utilization-rate" class="text-xl sm:text-2xl font-bold text-emerald-600 mt-2">0%</h3>
+            <p id="kpi-utilization-sub" class="text-[11px] text-slate-400 mt-1">0 seats đang gán cho GV/Lab</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Cảnh báo Bản quyền</span>
+              <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <h3 id="kpi-warning-count" class="text-xl sm:text-2xl font-bold text-amber-600 mt-2">0 gói</h3>
+            <p id="kpi-warning-sub" class="text-[11px] text-slate-400 mt-1">0 sắp hết hạn • 0 đã quá hạn</p>
+          </div>
+        </div>
+
+        <!-- BIỂU ĐỒ 2 CỘT -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          <!-- CỘT 1: TỶ LỆ SỬ DỤNG SEAT THEO TỪNG KHOA -->
+          <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="building-2" class="w-4 h-4 text-blue-600"></i>
+                <span>Tỷ lệ Sử dụng Seat theo từng Khoa</span>
+              </h3>
+              <span class="text-xs text-slate-400">used_seats / allocated_seats</span>
+            </div>
+            <div id="dept-utilization-list" class="space-y-3.5">
+              <!-- Nạp danh sách tỷ lệ của từng khoa -->
+            </div>
+          </div>
+
+          <!-- CỘT 2: CƠ CẤU CHI PHÍ THEO NHÀ CUNG CẤP & TRẠNG THÁI -->
+          <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i data-lucide="wallet" class="w-4 h-4 text-indigo-600"></i>
+                <span>Cơ cấu Chi phí theo Nhà cung cấp</span>
+              </h3>
+              <span class="text-xs text-slate-400">Ngân sách hợp đồng</span>
+            </div>
+            <div id="vendor-spending-list" class="space-y-3.5">
+              <!-- Nạp tỷ trọng nhà cung cấp -->
+            </div>
+
+            <!-- Phân bố trạng thái bản quyền -->
+            <div class="pt-3.5 border-t border-slate-100 space-y-2">
+              <span class="block text-xs font-semibold text-slate-600 uppercase">Phân bố Trạng thái Bản quyền:</span>
+              <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                <div class="p-2 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200">
+                  <div class="font-bold text-base" id="dist-active">0</div>
+                  <div class="font-medium text-[11px]">An toàn (Active)</div>
+                </div>
+                <div class="p-2 bg-amber-50 text-amber-800 rounded-lg border border-amber-200">
+                  <div class="font-bold text-base" id="dist-expiring">0</div>
+                  <div class="font-medium text-[11px]">Sắp hết hạn</div>
+                </div>
+                <div class="p-2 bg-red-50 text-red-800 rounded-lg border border-red-200">
+                  <div class="font-bold text-base" id="dist-expired">0</div>
+                  <div class="font-medium text-[11px]">Đã quá hạn</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================================== -->
+      <!-- TAB 7: NHẬT KÝ KIỂM TOÁN AN TOÀN (AUDIT_ALERT_LOGS) -->
+      <!-- ============================================================================== -->
+      <section id="tab-audit" class="space-y-4 hidden">
+        <div class="bg-white p-4 sm:px-5 sm:py-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Nhật ký Kiểm toán & Cảnh báo An toàn (Audit Trail)</h2>
+            <p class="text-xs text-slate-500">Lưu vết bất biến mọi hành động nhạy cảm: Giải mã xem key (BR03), Phân bổ, Cấp phát, Thu hồi, Gia hạn và Quét hạn</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="audit-keyword-input" oninput="debounceAuditSearch()" placeholder="Tìm kiếm mô tả..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none w-48">
+            <button onclick="fetchAuditLogs()" class="p-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- BỘ LỌC ACTION TYPE NHANH -->
+        <div class="flex flex-wrap gap-1.5 text-xs" id="audit-filters">
+          <button onclick="filterAuditType('ALL')" id="filter-audit-ALL" class="px-3 py-1.5 rounded-lg font-medium transition bg-blue-600 text-white">Tất cả</button>
+          <button onclick="filterAuditType('REVEAL_KEY')" id="filter-audit-REVEAL_KEY" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Xem Key (BR03)</button>
+          <button onclick="filterAuditType('ALLOCATE')" id="filter-audit-ALLOCATE" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Phân bổ Cấp 1</button>
+          <button onclick="filterAuditType('ASSIGN')" id="filter-audit-ASSIGN" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Cấp phát Cấp 2</button>
+          <button onclick="filterAuditType('REVOKE')" id="filter-audit-REVOKE" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Thu hồi Seat</button>
+          <button onclick="filterAuditType('RENEW')" id="filter-audit-RENEW" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Gia hạn</button>
+          <button onclick="filterAuditType('EXPIRING_ALERT')" id="filter-audit-EXPIRING_ALERT" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Cảnh báo Quét hạn</button>
+          <button onclick="filterAuditType('APPROVE_REQUEST')" id="filter-audit-APPROVE_REQUEST" class="px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200">Duyệt Đề xuất</button>
+        </div>
+
+        <!-- BẢNG AUDIT LOGS -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-semibold border-b border-slate-200 tracking-wider">
+                <tr>
+                  <th class="px-4 py-2.5">Thời gian</th>
+                  <th class="px-4 py-2.5">Loại hành động</th>
+                  <th class="px-4 py-2.5">Người thực hiện</th>
+                  <th class="px-4 py-2.5">Nội dung chi tiết</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body" class="divide-y divide-slate-100 font-normal">
+                <!-- Nạp dữ liệu tự động bằng JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 1: PHÂN BỔ VỀ CHO KHOA (BR01) -->
+  <!-- ============================================================================== -->
+  <div id="allocate-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900">Phân bổ Hạn mức cho Khoa</h3>
+            <p class="text-xs text-slate-500">Trích số lượng seat từ Kho tổng về Quỹ Khoa quản lý</p>
+          </div>
+        </div>
+        <button onclick="closeModal('allocate-modal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="allocate-form" onsubmit="handleAllocateSubmit(event)" class="space-y-4">
+        <input type="hidden" id="alloc-license-id">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Gói bản quyền</label>
+          <input type="text" id="alloc-software-name" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 font-medium cursor-not-allowed">
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center justify-between">
+          <span class="text-xs text-amber-800 font-medium">Số seat khả dụng trong Kho tổng:</span>
+          <span id="alloc-available-seats" class="font-bold text-amber-900 text-sm">0 seats</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chọn Khoa / Viện nhận hạn mức <span class="text-red-500">*</span></label>
+          <select id="alloc-dept-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <!-- Nạp danh sách khoa -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Số lượng seat muốn phân bổ <span class="text-red-500">*</span></label>
+          <input type="number" id="alloc-seats-input" min="1" required oninput="validateAllocateSeats(this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Nhập số seat...">
+          <!-- Cảnh báo BR01 -->
+          <p id="alloc-error-message" class="text-xs text-red-600 font-medium mt-1.5 hidden flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+            <span>Số lượng vượt quá số seat còn trống trong kho tổng!</span>
+          </p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeModal('allocate-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" id="alloc-submit-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition">Xác nhận Phân bổ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 2: CẤP PHÁT CHI TIẾT CHO GV / LAB (BR02) -->
+  <!-- ============================================================================== -->
+  <div id="assign-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900">Cấp phát Bản quyền (Cấp 2)</h3>
+            <p class="text-xs text-slate-500">Gán bản quyền từ quỹ Khoa cho Giảng viên hoặc Máy trạm</p>
+          </div>
+        </div>
+        <button onclick="closeModal('assign-modal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="assign-form" onsubmit="handleAssignSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chọn Quỹ Bản quyền của Khoa <span class="text-red-500">*</span></label>
+          <select id="assign-alloc-select" required onchange="onAllocationSelected(this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <!-- Nạp danh sách allocations -->
+          </select>
+        </div>
+
+        <div id="assign-pool-warning" class="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-xs font-medium hidden">
+          Gói bản quyền này đã HẾT HẠN (EXPIRED). Hệ thống không cho phép thực hiện cấp phát mới theo quy định BR04.
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">Hình thức cấp phát <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center space-x-2 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+              <input type="radio" name="target_type" value="USER" checked onchange="toggleTargetType('USER')" class="text-emerald-600 focus:ring-emerald-500">
+              <span class="text-sm font-medium text-slate-800">Cấp cho Giảng viên</span>
+            </label>
+            <label class="flex items-center space-x-2 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+              <input type="radio" name="target_type" value="DEVICE" onchange="toggleTargetType('DEVICE')" class="text-emerald-600 focus:ring-emerald-500">
+              <span class="text-sm font-medium text-slate-800">Cấp cho Máy trạm</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- DROPDOWN GIẢNG VIÊN -->
+        <div id="target-user-group">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chọn Giảng viên <span class="text-red-500">*</span></label>
+          <select id="assign-user-select" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <!-- Nạp users -->
+          </select>
+        </div>
+
+        <!-- DROPDOWN MÁY TRẠM -->
+        <div id="target-device-group" class="hidden">
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chọn Máy trạm phòng Lab <span class="text-red-500">*</span></label>
+          <select id="assign-device-select" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <!-- Nạp devices (máy broken bị disabled) -->
+          </select>
+          <p class="text-xs text-slate-500 mt-1">Lưu ý: Thiết bị gặp sự cố (BROKEN) hoặc đang bảo trì sẽ bị vô hiệu hóa.</p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeModal('assign-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" id="assign-submit-btn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition">Xác nhận Cấp phát</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 3: GIẢI MÃ LICENSE KEY (BR03) -->
+  <!-- ============================================================================== -->
+  <div id="reveal-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2 bg-slate-900 text-amber-400 rounded-lg">
+            <i data-lucide="key" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 leading-tight">Giải Mã Khóa Kích Hoạt</h3>
+            <p id="reveal-software-subtitle" class="text-xs text-slate-500 font-medium">Bảo mật mã hóa chuẩn AES-256-CBC</p>
+          </div>
+        </div>
+        <button onclick="closeModal('reveal-modal')" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5">
+        <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200/80 text-xs text-amber-900 space-y-1">
+          <div class="flex items-center gap-1.5 font-bold">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+            <span>Quy định An toàn & Kiểm toán (BR03)</span>
+          </div>
+          <p class="leading-relaxed text-amber-800">
+            Hành động xem khóa bản quyền này đã được tự động lưu vào <strong>Audit Alert Log</strong> kèm định danh tài khoản và thời điểm giải mã để phục vụ hậu kiểm.
+          </p>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Khóa Bản Quyền Giải Mã</label>
+            <span class="text-xs text-slate-500 font-mono flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+              Tự ẩn sau: <strong id="reveal-countdown-timer" class="text-rose-600 font-bold">30s</strong>
+            </span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="revealed-key-text" readonly class="w-full font-mono bg-slate-900 text-emerald-400 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm font-bold tracking-widest select-all shadow-inner">
+            <button id="copy-key-btn" onclick="copyRevealedKey()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="copy" class="w-3.5 h-3.5" id="copy-key-icon"></i>
+              <span id="copy-key-label">Sao chép</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+        <span>Vui lòng không chụp ảnh hoặc chia sẻ khóa ngoài kênh nội bộ.</span>
+        <button onclick="closeModal('reveal-modal')" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 4: GIA HẠN GÓI BẢN QUYỀN (RENEWAL VỚI RÀNG BUỘC HỢP ĐỒNG 2 BƯỚC) -->
+  <!-- ============================================================================== -->
+  <div id="renew-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+            <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900">Gia hạn Gói Bản quyền</h3>
+            <p class="text-xs text-slate-500">Ràng buộc: Đề xuất qua Nhà trường & Ký hợp đồng trước khi gia hạn</p>
+          </div>
+        </div>
+        <button onclick="closeModal('renew-modal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Thông tin chung của gói bản quyền -->
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Gói bản quyền</label>
+          <input type="text" id="renew-software-name" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 font-semibold cursor-not-allowed">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+            <span class="block text-xs text-slate-500 font-medium">Hạn sử dụng hiện tại:</span>
+            <span id="renew-current-expiry" class="font-bold text-slate-800 text-sm">--/--/----</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+            <span class="block text-xs text-slate-500 font-medium">Trạng thái hiện tại:</span>
+            <span id="renew-current-status" class="font-bold text-sm">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trạng thái Loading khi kiểm tra điều kiện hợp đồng -->
+      <div id="renew-loading-state" class="py-6 text-center space-y-2">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+        <p class="text-xs text-slate-500">Đang đối soát Hợp đồng mua sắm & Phiếu đề xuất với Nhà trường...</p>
+      </div>
+
+      <!-- NHÁNH 1: CHƯA CÓ HỢP ĐỒNG (BẮT BUỘC GỬI PHIẾU ĐỀ XUẤT HOẶC CHỜ DUYỆT) -->
+      <div id="renew-no-contract-section" class="hidden space-y-4">
+        <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3 text-amber-900">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
+          <div class="text-xs space-y-1">
+            <div class="font-bold text-amber-900">Ràng buộc quy trình: Chưa có Hợp đồng mua sắm / gia hạn</div>
+            <p class="text-amber-800 leading-relaxed">
+              Theo quy định nhà trường, để gia hạn bản quyền cần có Hợp đồng mua sắm đã ký kết với Nhà cung cấp. Khoa cần gửi Phiếu đề xuất gia hạn để Ban Giám hiệu / Quản lý CNTT phê duyệt và hoàn tất thủ tục ký hợp đồng.
+            </p>
+          </div>
+        </div>
+
+        <!-- 1A: ĐÃ CÓ PHIẾU ĐỀ XUẤT ĐANG CHỜ DUYỆT (PENDING) -->
+        <div id="renew-pending-request-box" class="hidden p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="clock" class="w-4 h-4 text-blue-600"></i>
+              <span class="font-bold text-xs text-blue-900 uppercase tracking-wide">Phiếu đề xuất đang chờ Nhà trường duyệt</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">PENDING</span>
+          </div>
+          <div class="text-xs space-y-1.5 text-slate-700 bg-white/70 p-3 rounded-lg border border-blue-100 font-mono">
+            <div><span class="text-slate-500 font-sans">Mã phiếu:</span> <span id="renew-pending-id" class="font-semibold text-blue-700">--</span></div>
+            <div><span class="text-slate-500 font-sans">Khoa đề xuất:</span> <span id="renew-pending-dept" class="font-sans font-semibold text-slate-800">--</span></div>
+            <div><span class="text-slate-500 font-sans">Người gửi:</span> <span id="renew-pending-user" class="font-sans text-slate-800">--</span></div>
+            <div><span class="text-slate-500 font-sans">Ngày gửi:</span> <span id="renew-pending-date" class="text-slate-800">--</span></div>
+            <div><span class="text-slate-500 font-sans">Số seat đề xuất:</span> <span id="renew-pending-seats" class="font-semibold text-indigo-700">--</span></div>
+          </div>
+          <p class="text-[11px] text-blue-800 leading-relaxed italic">
+            💡 Ban Giám hiệu / Quản lý CNTT có thể xem và bấm <strong>"Duyệt"</strong> tại bảng <em>"Luồng Đề xuất & Phê duyệt Bản quyền"</em> phía trên. Khi duyệt, Hợp đồng gia hạn sẽ được kích hoạt tự động.
+          </p>
+          <div class="pt-2 flex justify-end">
+            <button type="button" onclick="closeModal('renew-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Đóng</button>
+          </div>
+        </div>
+
+        <!-- 1B: CHƯA CÓ PHIẾU ĐỀ XUẤT -> FORM GỬI PHIẾU ĐỀ XUẤT VỀ NHÀ TRƯỜNG -->
+        <form id="renew-request-form" onsubmit="handleSendRenewalRequestSubmit(event)" class="hidden space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+          <div class="flex items-center space-x-2 text-slate-800 font-bold text-xs uppercase">
+            <i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i>
+            <span>Gửi Phiếu Đề Xuất Gia Hạn Về Nhà Trường</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Khoa / Phòng ban đề xuất <span class="text-red-500">*</span></label>
+            <select id="renew-req-dept-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <!-- Nạp danh sách khoa -->
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Số seat cần gia hạn <span class="text-red-500">*</span></label>
+              <input type="number" id="renew-req-seats-input" min="1" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Loại đề xuất</label>
+              <input type="text" readonly value="GIA HẠN (RENEWAL)" class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 font-bold cursor-not-allowed">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Lý do & mục đích gia hạn <span class="text-red-500">*</span></label>
+            <textarea id="renew-req-purpose-input" required rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lý do đề xuất gia hạn gói bản quyền..."></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center justify-end space-x-2">
+            <button type="button" onclick="closeModal('renew-modal')" class="px-3.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Hủy</button>
+            <button type="submit" id="renew-send-request-btn" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition inline-flex items-center gap-1.5">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Gửi Phiếu Đề Xuất Gia Hạn</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- NHÁNH 2: ĐÃ CÓ HỢP ĐỒNG KHẢ DỤNG -> THỰC HIỆN GIA HẠN NGAY -->
+      <form id="renew-form" onsubmit="handleRenewSubmit(event)" class="hidden space-y-4">
+        <input type="hidden" id="renew-license-id">
+        
+        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start space-x-2 text-emerald-900">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+          <p class="text-xs text-emerald-800">
+            <strong>Đủ điều kiện gia hạn:</strong> Đã có Hợp đồng mua sắm/gia hạn hợp lệ ký kết với Nhà cung cấp. Vui lòng chọn Hợp đồng và cập nhật kỳ hạn mới.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Hợp đồng mua sắm / gia hạn liên kết <span class="text-red-500">*</span></label>
+          <select id="renew-contract-select" required onchange="handleRenewContractChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-800">
+            <!-- Nạp danh sách hợp đồng khả dụng -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ngày hết hạn mới <span class="text-red-500">*</span></label>
+            <input type="date" id="renew-new-expiry-input" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chi phí gia hạn (VNĐ) <span class="text-red-500">*</span></label>
+            <input type="number" id="renew-cost-input" min="0" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ghi chú gia hạn</label>
+          <input type="text" id="renew-notes-input" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Lý do hoặc số quyết định phê duyệt...">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeModal('renew-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" id="renew-submit-btn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition inline-flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>Kích Hoạt Gia Hạn Bản Quyền</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 5: LẬP ĐỀ XUẤT BẢN QUYỀN MỚI (DEPT_REP) -->
+  <!-- ============================================================================== -->
+  <div id="create-request-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+            <i data-lucide="file-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900">Lập Phiếu Đề xuất Bản quyền</h3>
+            <p class="text-xs text-slate-500">Đại diện phòng ban / Trưởng khoa gửi đề xuất tới Quản lý CNTT</p>
+          </div>
+        </div>
+        <button onclick="closeModal('create-request-modal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="create-request-form" onsubmit="handleCreateRequestSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Khoa / Phòng ban đề xuất <span class="text-red-500">*</span></label>
+          <select id="req-dept-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <!-- Nạp danh sách khoa -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Phần mềm cần đề xuất <span class="text-red-500">*</span></label>
+          <select id="req-software-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <!-- Nạp danh sách phần mềm -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">Loại đề xuất <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-center space-x-1.5 p-2.5 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
+              <input type="radio" name="request_type" value="NEW" checked class="text-blue-600">
+              <span>Mua mới</span>
+            </label>
+            <label class="flex items-center space-x-1.5 p-2.5 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
+              <input type="radio" name="request_type" value="RENEWAL" class="text-blue-600">
+              <span>Gia hạn</span>
+            </label>
+            <label class="flex items-center space-x-1.5 p-2.5 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
+              <input type="radio" name="request_type" value="ADD_SEATS" class="text-blue-600">
+              <span>Thêm seat</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Số lượng seat đề xuất <span class="text-red-500">*</span></label>
+          <input type="number" id="req-seats-input" min="1" value="10" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Nhập số lượng...">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mục đích sử dụng & Giải trình</label>
+          <textarea id="req-purpose-input" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ví dụ: Trang bị cho phòng máy Lab A301 phục vụ môn Đồ họa máy tính..."></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeModal('create-request-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition">Gửi Đề Xuất</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL 6: TỪ CHỐI ĐỀ XUẤT (IT_MANAGER) -->
+  <!-- ============================================================================== -->
+  <div id="reject-request-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-red-100 text-red-600 rounded-lg">
+            <i data-lucide="x-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900">Từ chối Đề xuất Bản quyền</h3>
+            <p class="text-xs text-slate-500">Cung cấp lý do giải trình rõ ràng cho Khoa</p>
+          </div>
+        </div>
+        <button onclick="closeModal('reject-request-modal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="reject-request-form" onsubmit="handleRejectRequestSubmit(event)" class="space-y-4">
+        <input type="hidden" id="reject-request-id">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lý do từ chối <span class="text-red-500">*</span></label>
+          <textarea id="reject-reason-input" required rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="Ví dụ: Kho tổng hiện đã hết ngân sách / Khoa đã được cấp đủ hạn mức cho học kỳ này..."></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeModal('reject-request-modal')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium shadow-sm transition">Xác nhận Từ Chối</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- MODAL ĐĂNG NHẬP (STANDARD ENTERPRISE LOGIN PORTAL) -->
+  <!-- ============================================================================== -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden transition-all duration-200">
+      <!-- Modal Header -->
+      <div class="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative border-b border-slate-800">
+        <div class="flex items-center space-x-3.5">
+          <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 text-white p-2.5 rounded-xl shadow-lg ring-1 ring-white/20">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold tracking-tight">Cổng Đăng Nhập SALM</h3>
+            <p class="text-xs text-slate-300">Hệ thống Quản lý Bản quyền Phần mềm Trường học</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 mt-2.5 leading-relaxed">Vui lòng nhập tài khoản email và mật khẩu được cấp để truy cập vào hệ thống.</p>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Error Message -->
+        <div id="login-error" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2.5">
+          <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 text-red-600"></i>
+          <span id="login-error-text" class="font-medium">Email hoặc mật khẩu không chính xác.</span>
+        </div>
+
+        <!-- Form Đăng Nhập Chuẩn Mực -->
+        <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <!-- Trường Email -->
+          <div>
+            <label for="login-email" class="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Địa chỉ Email <span class="text-red-500">*</span></span>
+              <span class="text-[11px] text-slate-400 font-normal">Hòm thư @salm.edu.vn</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </div>
+              <input type="email" id="login-email" required autocomplete="email" placeholder="ví dụ: itstaff@salm.edu.vn" 
+                class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100 font-normal">
+            </div>
+          </div>
+
+          <!-- Trường Mật khẩu -->
+          <div>
+            <label for="login-password" class="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Mật khẩu <span class="text-red-500">*</span></span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </div>
+              <input type="password" id="login-password" required autocomplete="current-password" placeholder="Nhập mật khẩu truy cập" 
+                class="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 focus:border-blue-600 rounded-xl text-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <button type="button" onclick="togglePasswordVisibility()" id="btn-toggle-password" 
+                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition focus:outline-none" 
+                title="Ẩn/Hiện mật khẩu">
+                <i data-lucide="eye" id="icon-toggle-password" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tiện ích: Ghi nhớ & Quên mật khẩu -->
+          <div class="flex items-center justify-between text-xs pt-0.5">
+            <label class="flex items-center space-x-2 text-slate-600 cursor-pointer select-none">
+              <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 transition cursor-pointer">
+              <span class="font-medium text-slate-700">Ghi nhớ tài khoản</span>
+            </label>
+            <button type="button" onclick="openForgotPasswordModal()" class="text-blue-600 hover:text-blue-700 font-semibold hover:underline focus:outline-none">
+              Quên mật khẩu?
+            </button>
+          </div>
+
+          <!-- Nút Đăng nhập -->
+          <button type="submit" id="btn-login-submit" 
+            class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl text-sm transition shadow-sm hover:shadow flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Đăng nhập hệ thống</span>
+          </button>
+        </form>
+
+        <!-- Chân trang bảo mật & tuân thủ -->
+        <div class="pt-3 border-t border-slate-100 flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5"></i>
+          <p>Hệ thống chuyên dụng nội bộ trường học. Mọi hành vi đăng nhập và truy xuất bản quyền đều được ghi lại trong Nhật ký Kiểm toán.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HỖ TRỢ QUÊN MẬT KHẨU -->
+  <div id="forgot-password-modal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden transition-all duration-200">
+      <div class="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="bg-blue-600 text-white p-2 rounded-lg">
+            <i data-lucide="help-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold">Hỗ trợ Cấp lại Mật khẩu</h3>
+            <p class="text-[11px] text-slate-400">Quy trình cấp lại mật khẩu nội bộ</p>
+          </div>
+        </div>
+        <button onclick="closeForgotPasswordModal()" class="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-600">
+        <p class="leading-relaxed text-xs">
+          Nhằm bảo vệ an toàn thông tin bản quyền và tuân thủ quy chế an ninh dữ liệu của Trường, mật khẩu tài khoản SALM được quản trị tập trung.
+        </p>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs text-slate-700">
+          <div class="font-bold text-slate-900 flex items-center gap-1.5 pb-1 border-b border-slate-200">
+            <i data-lucide="building" class="w-4 h-4 text-blue-600"></i>
+            <span>Trung tâm Công nghệ Thông tin & Truyền thông</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Hotline nội bộ: <strong>1900 6868</strong> (Máy lẻ: <strong>102</strong>)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Hòm thư hỗ trợ: <strong class="text-blue-600 font-mono">it-support@salm.edu.vn</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Địa chỉ: <strong>Phòng 302, Tòa nhà Hiệu bộ</strong></span>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500">
+          * Cán bộ, Giảng viên vui lòng sử dụng email trường hoặc liên hệ trực tiếp để được cấp lại mật khẩu an toàn.
+        </p>
+        <button type="button" onclick="closeForgotPasswordModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs transition">
+          Đã hiểu, quay lại đăng nhập
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT LOGIC CLIENT -->
+  <script>
+    // State lưu trữ dữ liệu
+    let currentPools = [];
+    let currentAllocations = [];
+    let currentDepartments = [];
+    let currentRequests = [];
+    let currentSoftwares = [];
+    let currentAuditLogs = [];
+    let currentAuditFilter = 'ALL';
+    let selectedPoolForAlloc = null;
+
+    // State xác thực & phân quyền (RBAC)
+    let currentUser = null;
+    let authToken = localStorage.getItem('salm_token') || null;
+
+    // Wrapper cho fetch đính kèm JWT Token
+    async function authFetch(url, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      const res = await fetch(url, { ...options, headers });
+      if (res.status === 401) {
+        localStorage.removeItem('salm_token');
+        localStorage.removeItem('salm_user');
+        authToken = null;
+        currentUser = null;
+        openLoginModal('Phiên làm việc đã hết hạn hoặc chưa xác thực. Vui lòng đăng nhập lại.');
+      }
+      return res;
+    }
+
+    // Modal Đăng nhập & Xác thực
+    function openLoginModal(errorMsg = null) {
+      const modal = document.getElementById('login-modal');
+      const errBox = document.getElementById('login-error');
+      const errText = document.getElementById('login-error-text');
+      if (errorMsg) {
+        errText.innerText = errorMsg;
+        errBox.classList.remove('hidden');
+      } else {
+        errBox.classList.add('hidden');
+      }
+
+      // Tự động điền email đã ghi nhớ (nếu có)
+      const rememberedEmail = localStorage.getItem('salm_remembered_email');
+      const emailInput = document.getElementById('login-email');
+      const rememberCheckbox = document.getElementById('login-remember');
+      if (rememberedEmail && emailInput) {
+        emailInput.value = rememberedEmail;
+        if (rememberCheckbox) rememberCheckbox.checked = true;
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
+    }
+
+    function togglePasswordVisibility() {
+      const pwdInput = document.getElementById('login-password');
+      const icon = document.getElementById('icon-toggle-password');
+      if (!pwdInput) return;
+
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        pwdInput.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
+    function openForgotPasswordModal() {
+      const modal = document.getElementById('forgot-password-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+      }
+    }
+
+    function closeForgotPasswordModal() {
+      const modal = document.getElementById('forgot-password-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      await performLogin(email, password);
+    }
+
+    async function performLogin(email, password) {
+      const btn = document.getElementById('btn-login-submit');
+      const errBox = document.getElementById('login-error');
+      const errText = document.getElementById('login-error-text');
+      const rememberCheckbox = document.getElementById('login-remember');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Đang xác thực...';
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email ? email.trim() : '', password })
+        });
+        const json = await res.json();
+
+        if (!json.success) {
+          errText.innerText = json.message || 'Đăng nhập không thành công.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        // Lưu hoặc xóa email đã ghi nhớ
+        if (rememberCheckbox && rememberCheckbox.checked) {
+          localStorage.setItem('salm_remembered_email', email.trim());
+        } else {
+          localStorage.removeItem('salm_remembered_email');
+        }
+
+        authToken = json.token;
+        currentUser = json.user;
+        localStorage.setItem('salm_token', authToken);
+        localStorage.setItem('salm_user', JSON.stringify(currentUser));
+
+        // Xóa trường mật khẩu sau khi đăng nhập thành công
+        document.getElementById('login-password').value = '';
+
+        closeLoginModal();
+        showToast(json.message, 'success');
+        applyRoleState();
+        await loadAllData();
+      } catch (err) {
+        errText.innerText = 'Lỗi kết nối máy chủ: ' + err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i><span>Đăng nhập hệ thống</span>';
+        lucide.createIcons();
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('salm_token');
+      localStorage.removeItem('salm_user');
+      authToken = null;
+      currentUser = null;
+      showToast('Đã đăng xuất khỏi hệ thống.', 'info');
+      renderUserHeader();
+      document.getElementById('role-banner').classList.add('hidden');
+      openLoginModal();
+    }
+
+    function applyRoleState() {
+      renderUserHeader();
+      renderRoleBanner();
+      adjustUIPermissions();
+    }
+
+    function renderUserHeader() {
+      const container = document.getElementById('user-header-container');
+      if (!currentUser) {
+        container.innerHTML = `
+          <button onclick="openLoginModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition inline-flex items-center gap-1.5">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+            <span>Đăng nhập</span>
+          </button>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let avatarBg = 'bg-blue-100 text-blue-700 border-blue-200';
+      let avatarText = 'IT';
+      let roleLabel = 'Chuyên viên CNTT (Toàn trường)';
+
+      if (currentUser.role_code === 'DEPT_REP') {
+        avatarBg = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+        avatarText = currentUser.department_code || 'Khoa';
+        roleLabel = `Đại diện: ${currentUser.department_name || 'Khoa'}`;
+      } else if (currentUser.role_code === 'ADMIN') {
+        avatarBg = 'bg-slate-800 text-white border-slate-700';
+        avatarText = 'AD';
+        roleLabel = 'Quản trị viên Hệ thống';
+      } else if (currentUser.role_code === 'IT_MANAGER') {
+        avatarBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        avatarText = 'QL';
+        roleLabel = 'Quản lý CNTT';
+      }
+
+      container.innerHTML = `
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-full ${avatarBg} font-bold flex items-center justify-center text-xs border shadow-xs select-none">
+            ${avatarText}
+          </div>
+          <div class="text-left hidden sm:block">
+            <p class="text-sm font-semibold text-slate-800 leading-tight">${currentUser.full_name}</p>
+            <p class="text-xs text-slate-500 font-medium">${roleLabel}</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+          <button onclick="handleLogout()" title="Đăng xuất khỏi hệ thống" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg border border-slate-200 hover:border-red-200 transition inline-flex items-center gap-1.5">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>Đăng xuất</span>
+          </button>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function renderRoleBanner() {
+      const banner = document.getElementById('role-banner');
+      const icon = document.getElementById('role-banner-icon');
+      const title = document.getElementById('role-banner-title');
+      const desc = document.getElementById('role-banner-desc');
+      const badge = document.getElementById('role-banner-badge');
+
+      if (!currentUser) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+
+      if (currentUser.role_code === 'DEPT_REP') {
+        banner.className = 'mb-6 p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-white border-indigo-200';
+        icon.className = 'p-2.5 rounded-xl bg-indigo-600 text-white shadow-xs';
+        icon.innerHTML = '<i data-lucide="graduation-cap" class="w-5 h-5"></i>';
+        title.innerHTML = `Chế độ: Đại diện ${currentUser.department_name} (DEPT_REP)`;
+        desc.innerHTML = `Bạn đang quản lý hạn mức Cấp 2 nội bộ Khoa. Bạn có thể cấp phát cho Giảng viên/Máy Lab của Khoa và gửi Phiếu đề xuất về Nhà trường.`;
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200';
+        badge.innerText = `Phạm vi: Cấp 2 (${currentUser.department_code || 'Khoa'})`;
+      } else if (currentUser.role_code === 'IT_STAFF') {
+        banner.className = 'mb-6 p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs bg-gradient-to-r from-blue-50/90 via-sky-50/60 to-white border-blue-200';
+        icon.className = 'p-2.5 rounded-xl bg-blue-600 text-white shadow-xs';
+        icon.innerHTML = '<i data-lucide="shield-check" class="w-5 h-5"></i>';
+        title.innerHTML = `Chế độ: Chuyên viên CNTT Toàn trường (IT_STAFF)`;
+        desc.innerHTML = `Bạn có toàn quyền quản trị Kho bản quyền Tổng Cấp 1, trích phân bổ hạn mức cho các Khoa, phê duyệt đề xuất và giải mã License Key theo BR03.`;
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200';
+        badge.innerText = 'Phạm vi: Toàn trường (Cấp 1)';
+      } else {
+        banner.className = 'mb-6 p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs bg-gradient-to-r from-slate-100 via-slate-50 to-white border-slate-300';
+        icon.className = 'p-2.5 rounded-xl bg-slate-800 text-white shadow-xs';
+        icon.innerHTML = '<i data-lucide="sliders" class="w-5 h-5"></i>';
+        title.innerHTML = `Chế độ: ${currentUser.role_name} (${currentUser.role_code})`;
+        desc.innerHTML = `Toàn quyền cấu hình, thanh tra kiểm toán, quản lý tài khoản và hạn mức toàn hệ thống.`;
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-800 border border-slate-300';
+        badge.innerText = 'Toàn quyền Hệ thống';
+      }
+      lucide.createIcons();
+    }
+
+    function adjustUIPermissions() {
+      const isDeptRep = currentUser && currentUser.role_code === 'DEPT_REP';
+
+      const contractsTabNav = document.getElementById('nav-contracts');
+      const auditTabNav = document.getElementById('nav-audit');
+      const analyticsTabNav = document.getElementById('nav-analytics');
+
+      if (isDeptRep) {
+        if (contractsTabNav) contractsTabNav.classList.add('hidden');
+        if (auditTabNav) auditTabNav.classList.add('hidden');
+        if (analyticsTabNav) analyticsTabNav.classList.add('hidden');
+
+        // Tự động chuyển về tab allocations nếu đang đứng ở tab bị ẩn
+        const activeTab = document.querySelector('section[id^="tab-"]:not(.hidden)');
+        if (activeTab && ['tab-contracts', 'tab-audit', 'tab-analytics'].includes(activeTab.id)) {
+          ['pools', 'allocations', 'assignments', 'contracts', 'requests', 'analytics', 'audit'].forEach(t => {
+            const tabEl = document.getElementById(`tab-${t}`);
+            const navEl = document.getElementById(`nav-${t}`);
+            if (tabEl) tabEl.classList.add('hidden');
+            if (navEl) {
+              navEl.classList.remove('bg-blue-50', 'text-blue-700');
+              navEl.classList.add('text-slate-600', 'hover:bg-slate-50');
+            }
+          });
+          const allocTab = document.getElementById('tab-allocations');
+          const allocNav = document.getElementById('nav-allocations');
+          if (allocTab) allocTab.classList.remove('hidden');
+          if (allocNav) {
+            allocNav.classList.remove('text-slate-600', 'hover:bg-slate-50');
+            allocNav.classList.add('bg-blue-50', 'text-blue-700');
+          }
+        }
+      } else {
+        if (contractsTabNav) contractsTabNav.classList.remove('hidden');
+        if (auditTabNav) auditTabNav.classList.remove('hidden');
+        if (analyticsTabNav) analyticsTabNav.classList.remove('hidden');
+      }
+    }
+
+    // Khởi tạo giao diện khi nạp xong
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+
+      // Kiểm tra phiên đăng nhập đã lưu trong localStorage
+      if (authToken) {
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          const json = await res.json();
+          if (json.success && json.user) {
+            currentUser = json.user;
+            localStorage.setItem('salm_user', JSON.stringify(currentUser));
+            closeLoginModal();
+            applyRoleState();
+            await loadAllData();
+            return;
+          }
+        } catch (e) {
+          console.warn('Lỗi kiểm tra token:', e.message);
+        }
+      }
+
+      // Nếu chưa đăng nhập, đảm bảo hiển thị Cổng xác thực
+      openLoginModal();
+    });
+
+    async function loadAllData() {
+      if (!currentUser) return;
+
+      const isDeptRep = currentUser.role_code === 'DEPT_REP';
+      const deptId = isDeptRep ? currentUser.department_id : null;
+
+      const fetchPromises = [
+        fetchPools(),
+        fetchAllocations(deptId),
+        fetchAssignments(deptId),
+        fetchDepartments(),
+        fetchRequests(deptId),
+        fetchSoftwares()
+      ];
+
+      if (!isDeptRep) {
+        fetchPromises.push(fetchContracts());
+        fetchPromises.push(fetchAnalytics());
+        fetchPromises.push(fetchAuditLogs());
+      }
+
+      await Promise.all(fetchPromises);
+      lucide.createIcons();
+    }
+
+    // Chuyển Tab
+    function switchTab(tabId) {
+      ['pools', 'allocations', 'assignments', 'contracts', 'requests', 'analytics', 'audit'].forEach(t => {
+        const tabEl = document.getElementById(`tab-${t}`);
+        const navEl = document.getElementById(`nav-${t}`);
+        if (tabEl) tabEl.classList.add('hidden');
+        if (navEl) {
+          navEl.classList.remove('bg-blue-50', 'text-blue-700');
+          navEl.classList.add('text-slate-600', 'hover:bg-slate-50');
+        }
+      });
+
+      const activeTabEl = document.getElementById(`tab-${tabId}`);
+      const activeNavEl = document.getElementById(`nav-${tabId}`);
+      if (activeTabEl) activeTabEl.classList.remove('hidden');
+      if (activeNavEl) {
+        activeNavEl.classList.remove('text-slate-600', 'hover:bg-slate-50');
+        activeNavEl.classList.add('bg-blue-50', 'text-blue-700');
+      }
+
+      if (tabId === 'analytics') fetchAnalytics();
+      if (tabId === 'audit') fetchAuditLogs();
+
+      adjustUIPermissions();
+      lucide.createIcons();
+    }
+
+    // 1. NẠP KHO BẢN QUYỀN (LICENSE_POOLS)
+    async function fetchPools() {
+      try {
+        const res = await authFetch('/api/license-pools');
+        const json = await res.json();
+        if (json.success) {
+          currentPools = json.data;
+          renderPools(currentPools);
+        }
+      } catch (e) {
+        showToast('Lỗi khi tải kho bản quyền: ' + e.message, 'error');
+      }
+    }
+
+    // HỆ THỐNG NHÃN THỜI HẠN (EXPIRATION BADGES - 5 CẤP ĐỘ)
+    function getExpirationBadge(expiryDateStr, status) {
+      if (status === 'EXPIRED') {
+        return {
+          html: '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold badge-expired"><i data-lucide="x-circle" class="w-3.5 h-3.5 text-zinc-500"></i> Đã hết hạn</span>',
+          isExpired: true,
+          diffDays: 0
+        };
+      }
+      const now = new Date();
+      const expiry = new Date(expiryDateStr);
+      const diffTime = expiry.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 0) {
+        return {
+          html: `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold badge-expired"><i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-red-500"></i> Quá hạn (${Math.abs(diffDays)} ngày)</span>`,
+          isExpired: true,
+          diffDays
+        };
+      } else if (diffDays <= 7) {
+        return {
+          html: `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold badge-critical animate-pulse"><span class="w-2 h-2 rounded-full bg-red-600"></span> Khẩn cấp: Còn ${diffDays} ngày</span>`,
+          isExpired: false,
+          diffDays
+        };
+      } else if (diffDays <= 15) {
+        return {
+          html: `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium badge-warn-near"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Sắp hết: Còn ${diffDays} ngày</span>`,
+          isExpired: false,
+          diffDays
+        };
+      } else if (diffDays <= 30) {
+        return {
+          html: `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium badge-warn-far"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Còn ${diffDays} ngày</span>`,
+          isExpired: false,
+          diffDays
+        };
+      } else {
+        return {
+          html: `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium badge-safe"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Còn ${diffDays} ngày</span>`,
+          isExpired: false,
+          diffDays
+        };
+      }
+    }
+
+    // 1. NẠP KHO BẢN QUYỀN (LICENSE_POOLS)
+    async function fetchPools() {
+      try {
+        const res = await fetch('/api/license-pools');
+        const json = await res.json();
+        if (json.success) {
+          currentPools = json.data;
+          renderPools(currentPools);
+        }
+      } catch (e) {
+        showToast('Lỗi khi tải kho bản quyền: ' + e.message, 'error');
+      }
+    }
+
+    function renderPools(pools) {
+      const tbody = document.getElementById('pools-table-body');
+      if (!pools || pools.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400">Kho tổng hiện chưa có gói bản quyền nào. Hãy tạo hợp đồng mua sắm để nhập gói mới.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = pools.map(p => {
+        const total = p.total_seats;
+        const available = p.available_seats;
+        const allocated = total - available;
+        const percent = total > 0 ? Math.round((allocated / total) * 100) : 0;
+        const barColor = percent >= 90 ? 'bg-rose-500' : (percent >= 75 ? 'bg-amber-500' : 'bg-emerald-500');
+
+        const badgeInfo = getExpirationBadge(p.expiry_date, p.status);
+        const isExpired = badgeInfo.isExpired;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition ${isExpired ? 'bg-slate-50/40' : ''}">
+            <td class="px-4 py-2.5">
+              <div class="font-semibold text-slate-900">${p.software ? p.software.software_name : 'N/A'}</div>
+              <div class="text-[11px] text-slate-400">Bản: ${p.software ? p.software.version : 'N/A'} • ${p.software ? p.software.platform : ''}</div>
+            </td>
+            <td class="px-4 py-2.5 font-mono text-xs text-slate-600">
+              <span class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">${p.license_type}</span>
+            </td>
+            <td class="px-4 py-2.5">
+              <div class="inline-flex items-center gap-1.5 bg-slate-900 text-slate-200 px-2.5 py-1 rounded border border-slate-800 font-mono text-xs shadow-sm">
+                <span id="key-label-${p.license_id}" class="tracking-wider select-all font-semibold">${p.license_key_masked}</span>
+                <button onclick="revealKey('${p.license_id}', '${p.software ? p.software.software_name.replace(/'/g, "\\'") : 'Bản quyền'}')" title="Giải mã khóa (Ghi nhật ký kiểm toán BR03)" class="text-slate-400 hover:text-white p-0.5 rounded transition">
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </td>
+            <td class="px-4 py-2.5">
+              <!-- THANH TIẾN TRÌNH CẤP 1 (TỔNG KHO -> KHOA) -->
+              <div class="space-y-1 min-w-[140px]">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-slate-800 font-mono">${available} <span class="text-slate-400 font-normal">trống</span></span>
+                  <span class="font-mono text-[11px] text-slate-500">${allocated}/${total} (${percent}%)</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-sm h-1.5 overflow-hidden border border-slate-200">
+                  <div class="${barColor} h-1.5 transition-all duration-500" style="width: ${percent}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-2.5 text-xs font-mono">
+              <div class="text-slate-700">${new Date(p.expiry_date).toLocaleDateString('vi-VN')}</div>
+            </td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              ${badgeInfo.html}
+            </td>
+            <td class="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+              ${currentUser && currentUser.role_code === 'DEPT_REP' ? `
+                <button onclick="switchTab('requests'); openCreateRequestModal();" class="text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition inline-flex items-center gap-1 font-medium">
+                  <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                  <span>Gửi đề xuất Khoa</span>
+                </button>
+              ` : `
+                <button onclick="openRenewModal('${p.license_id}')" class="text-xs px-2 py-1 rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition inline-flex items-center gap-1 font-medium">
+                  <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                  <span>Gia hạn</span>
+                </button>
+                <button onclick="revealKey('${p.license_id}', '${p.software ? p.software.software_name.replace(/'/g, "\\'") : 'Bản quyền'}')" class="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-1 font-medium">
+                  <i data-lucide="key" class="w-3.5 h-3.5"></i>
+                  <span>Xem Key</span>
+                </button>
+                <button onclick="openAllocateModal('${p.license_id}')" ${isExpired || p.available_seats === 0 ? 'disabled title="Gói đã hết hạn (BR04) hoặc không còn seat trống" class="opacity-50 cursor-not-allowed text-xs px-2 py-1 rounded-lg bg-slate-200 text-slate-400 font-medium"' : 'class="text-xs px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition font-medium shadow-xs"'} >
+                  Phân bổ
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // 2. NẠP PHÂN BỔ KHOA (DEPARTMENT_ALLOCATIONS)
+    async function fetchAllocations(deptId = null) {
+      try {
+        const url = deptId ? `/api/allocations?department_id=${deptId}` : '/api/allocations';
+        const res = await authFetch(url);
+        const json = await res.json();
+        if (json.success) {
+          currentAllocations = json.data;
+          renderAllocations(currentAllocations);
+        }
+      } catch (e) {
+        showToast('Lỗi tải phân bổ khoa: ' + e.message, 'error');
+      }
+    }
+
+    function renderAllocations(allocations) {
+      const tbody = document.getElementById('allocations-table-body');
+      if (!allocations || allocations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Chưa có bản ghi phân bổ nào cho Khoa. Nhấn "Phân bổ cho Khoa" từ Kho bản quyền tổng để bắt đầu cấp phát hạn mức.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = allocations.map(a => {
+        const used = a.used_seats;
+        const allocated = a.allocated_seats;
+        const avail = allocated - used;
+        const percent = allocated > 0 ? Math.round((used / allocated) * 100) : 0;
+        
+        const barColor = percent >= 90 ? 'bg-rose-500' : (percent >= 75 ? 'bg-amber-500' : 'bg-emerald-500');
+        const textColor = percent >= 90 ? 'text-rose-600' : (percent >= 75 ? 'text-amber-600' : 'text-emerald-700');
+
+        const pool = a.license_pool;
+        const poolBadge = pool ? getExpirationBadge(pool.expiry_date, pool.status) : null;
+        const isPoolExpired = poolBadge ? poolBadge.isExpired : false;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="px-4 py-2.5">
+              <div class="font-semibold text-slate-900">${a.department ? a.department.department_name : 'N/A'}</div>
+              <div class="text-[11px] text-slate-400 font-mono">Mã: ${a.department ? a.department.department_code : ''}</div>
+            </td>
+            <td class="px-4 py-2.5">
+              <div class="font-medium text-slate-800">${pool && pool.software ? pool.software.software_name : 'N/A'}</div>
+              <div class="text-[11px] text-slate-400 font-mono">Loại: ${pool ? pool.license_type : ''}</div>
+            </td>
+            <td class="px-4 py-2.5">
+              <!-- THANH TIẾN TRÌNH HẠN MỨC 2 CẤP (KHOA DÙNG & TỔNG KHO) -->
+              <div class="space-y-1 min-w-[180px]">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-slate-800 font-mono">${used} / ${allocated} <span class="text-slate-400 font-normal">seats</span></span>
+                  <span class="font-mono text-xs font-semibold ${textColor}">${percent}% đã dùng</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-sm h-1.5 overflow-hidden border border-slate-200">
+                  <div class="${barColor} h-1.5 transition-all duration-500" style="width: ${percent}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400">
+                  <span>Khoa trống: <strong class="text-slate-700 font-mono">${avail}</strong></span>
+                  <span>Tổng kho: <strong class="text-slate-600 font-mono">${pool ? pool.available_seats : 0}</strong></span>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-2.5 text-xs font-mono text-slate-500">${new Date(a.allocated_date).toLocaleDateString('vi-VN')}</td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              ${poolBadge ? poolBadge.html : '<span class="px-2 py-0.5 rounded text-xs badge-safe">Hoạt động</span>'}
+            </td>
+            <td class="px-4 py-2.5 text-right">
+              <button onclick="switchTab('assignments'); openAssignModalWithAlloc('${a.allocation_id}')" 
+                ${avail <= 0 || isPoolExpired ? 'disabled title="Khoa đã hết seat hoặc gói đã hết hạn" class="opacity-50 cursor-not-allowed text-xs px-2.5 py-1 bg-slate-200 text-slate-400 rounded-lg font-medium"' : 'class="text-xs px-2.5 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition shadow-xs"'}>
+                Cấp GV / Lab
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // 3. NẠP CẤP PHÁT (LICENSE_ASSIGNMENTS)
+    async function fetchAssignments(deptId = null) {
+      try {
+        const url = deptId ? `/api/assignments?department_id=${deptId}` : '/api/assignments';
+        const res = await authFetch(url);
+        const json = await res.json();
+        if (json.success) {
+          renderAssignments(json.data);
+        }
+      } catch (e) {
+        showToast('Lỗi tải danh sách cấp phát: ' + e.message, 'error');
+      }
+    }
+
+    function renderAssignments(assignments) {
+      const tbody = document.getElementById('assignments-table-body');
+      if (!assignments || assignments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Chưa có giảng viên hoặc máy trạm nào được cấp phát.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = assignments.map(as => {
+        const isRevoked = as.status === 'REVOKED';
+        const targetName = as.target_type === 'USER'
+          ? (as.assigned_user ? as.assigned_user.full_name : 'Giảng viên')
+          : (as.device ? `${as.device.device_code} (${as.device.room_location})` : 'Máy trạm');
+        
+        return `
+          <tr class="hover:bg-slate-50/80 transition ${isRevoked ? 'bg-slate-50/50 opacity-70' : ''}">
+            <td class="px-4 py-2.5 font-semibold text-slate-900">${targetName}</td>
+            <td class="px-4 py-2.5">
+              <span class="text-xs px-2 py-0.5 rounded font-medium ${as.target_type === 'USER' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+                ${as.target_type === 'USER' ? 'Giảng viên' : 'Máy Lab'}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 text-slate-700">
+              <div class="text-sm font-medium">${as.allocation && as.allocation.license_pool ? as.allocation.license_pool.software.software_name : 'N/A'}</div>
+              <div class="text-[11px] text-slate-400">${as.allocation && as.allocation.department ? as.allocation.department.department_name : ''}</div>
+            </td>
+            <td class="px-4 py-2.5 text-xs text-slate-500">
+              <div>${new Date(as.assigned_at).toLocaleDateString('vi-VN')}</div>
+              ${isRevoked ? `<div class="text-red-500 font-medium">Thu hồi: ${new Date(as.revoked_at).toLocaleDateString('vi-VN')}</div>` : ''}
+            </td>
+            <td class="px-4 py-2.5">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${isRevoked ? 'badge-revoked' : 'badge-active'}">
+                ${isRevoked ? 'Đã thu hồi' : 'Đang sử dụng'}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 text-right">
+              ${!isRevoked ? `
+                <button onclick="handleRevoke('${as.assignment_id}')" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-medium transition inline-flex items-center gap-1">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  <span>Thu hồi Seat</span>
+                </button>
+              ` : '<span class="text-xs text-slate-400 italic">Đã hoàn trả</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // 4. NẠP HỢP ĐỒNG (CONTRACTS)
+    async function fetchContracts() {
+      try {
+        const res = await authFetch('/api/contracts');
+        const json = await res.json();
+        if (json.success) {
+          const tbody = document.getElementById('contracts-table-body');
+          tbody.innerHTML = json.data.map(c => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-2.5 font-mono text-xs font-bold text-blue-700">${c.contract_number}</td>
+              <td class="px-4 py-2.5 font-semibold text-slate-900">${c.vendor ? c.vendor.vendor_name : 'N/A'}</td>
+              <td class="px-4 py-2.5 text-slate-600 text-xs">${new Date(c.signed_date).toLocaleDateString('vi-VN')}</td>
+              <td class="px-4 py-2.5 font-semibold text-slate-900 text-xs">${Number(c.total_cost).toLocaleString('vi-VN')} đ</td>
+              <td class="px-4 py-2.5 text-xs text-slate-600">${c.license_pools ? c.license_pools.length : 0} gói bản quyền</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 5. NẠP DANH SÁCH KHOA PHỤC VỤ DROPDOWNS
+    async function fetchDepartments() {
+      try {
+        const res = await authFetch('/api/departments');
+        const json = await res.json();
+        if (json.success) {
+          currentDepartments = json.data;
+          const select = document.getElementById('alloc-dept-select');
+          if (select) {
+            select.innerHTML = '<option value="">-- Chọn Khoa nhận --</option>' + 
+              currentDepartments.map(d => `<option value="${d.department_id}">${d.department_name} (${d.department_code})</option>`).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 6. NẠP DANH SÁCH PHẦN MỀM
+    async function fetchSoftwares() {
+      try {
+        const res = await authFetch('/api/softwares');
+        const json = await res.json();
+        if (json.success) {
+          currentSoftwares = json.data;
+          const select = document.getElementById('req-software-select');
+          if (select) {
+            select.innerHTML = '<option value="">-- Chọn Phần mềm --</option>' +
+              currentSoftwares.map(s => `<option value="${s.software_id}">${s.software_name} (${s.version}) - ${s.platform}</option>`).join('');
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 7. NẠP DANH SÁCH ĐỀ XUẤT (LICENSE_REQUESTS)
+    async function fetchRequests(deptId = null) {
+      try {
+        const url = deptId ? `/api/requests?department_id=${deptId}` : '/api/requests';
+        const res = await authFetch(url);
+        const json = await res.json();
+        if (json.success) {
+          currentRequests = json.data;
+          renderRequests(currentRequests);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderRequests(requests) {
+      const tbody = document.getElementById('requests-table-body');
+      if (!tbody) return;
+
+      let pendingCount = 0;
+      let approvedCount = 0;
+      let rejectedCount = 0;
+
+      requests.forEach(r => {
+        if (r.status === 'PENDING') pendingCount++;
+        else if (r.status === 'APPROVED') approvedCount++;
+        else if (r.status === 'REJECTED') rejectedCount++;
+      });
+
+      document.getElementById('stat-pending-requests').innerText = pendingCount;
+      document.getElementById('stat-approved-requests').innerText = approvedCount;
+      document.getElementById('stat-rejected-requests').innerText = rejectedCount;
+
+      if (!requests || requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-slate-400">Chưa có phiếu đề xuất bản quyền nào.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = requests.map(r => {
+        const isPending = r.status === 'PENDING';
+        const isApproved = r.status === 'APPROVED';
+        const badgeClass = isApproved ? 'badge-active' : (isPending ? 'badge-expiring' : 'badge-expired');
+        const badgeText = isApproved ? 'Đã duyệt' : (isPending ? 'Chờ duyệt' : 'Đã từ chối');
+
+        const typeMap = {
+          'NEW': 'Mua mới',
+          'RENEWAL': 'Gia hạn',
+          'ADD_SEATS': 'Thêm seat'
+        };
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-600">${r.request_id.slice(0, 8)}</td>
+            <td class="px-4 py-2.5 font-semibold text-slate-900">${r.department ? r.department.department_name : 'N/A'}</td>
+            <td class="px-4 py-2.5">
+              <div class="font-medium text-slate-800">${r.software ? r.software.software_name : 'N/A'}</div>
+              <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 mt-0.5">
+                ${typeMap[r.request_type] || r.request_type}
+              </span>
+            </td>
+            <td class="px-4 py-2.5 font-bold text-blue-700">${r.requested_seats} seats</td>
+            <td class="px-4 py-2.5 text-xs text-slate-600 max-w-xs truncate" title="${r.purpose || ''}">${r.purpose || 'Không có'}</td>
+            <td class="px-4 py-2.5 text-xs">
+              <div class="font-medium text-slate-800">${r.requester ? r.requester.full_name : 'N/A'}</div>
+              <div class="text-slate-400">${new Date(r.created_at).toLocaleDateString('vi-VN')}</div>
+            </td>
+            <td class="px-4 py-2.5">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass}">${badgeText}</span>
+            </td>
+            <td class="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+              ${isPending ? (
+                currentUser && currentUser.role_code === 'DEPT_REP' ? `
+                  <span class="text-xs px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg font-medium border border-amber-200 inline-flex items-center gap-1 shadow-2xs">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                    <span>Chờ Nhà trường duyệt</span>
+                  </span>
+                ` : `
+                  <button onclick="handleApproveRequest('${r.request_id}')" class="text-xs px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition inline-flex items-center gap-1 shadow-xs">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <span>Duyệt</span>
+                  </button>
+                  <button onclick="openRejectRequestModal('${r.request_id}')" class="text-xs px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition inline-flex items-center gap-1 shadow-xs">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    <span>Từ chối</span>
+                  </button>
+                `
+              ) : `
+                <span class="text-xs text-slate-400 italic">
+                  ${isApproved ? (r.approver ? `Duyệt bởi ${r.approver.full_name}` : 'Đã duyệt') : (r.approver ? `Từ chối bởi ${r.approver.full_name}` : 'Đã từ chối')}
+                </span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // 8. BÁO CÁO THỐNG KÊ (ANALYTICS)
+    async function fetchAnalytics() {
+      try {
+        const res = await authFetch('/api/analytics/summary');
+        const json = await res.json();
+        if (json.success) {
+          renderAnalytics(json.data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderAnalytics(data) {
+      const { kpis, department_utilization, vendor_spending, status_distribution } = data;
+
+      // KPIs
+      document.getElementById('kpi-total-budget').innerText = `${Number(kpis.total_budget).toLocaleString('vi-VN')} đ`;
+      document.getElementById('kpi-total-seats').innerText = `${kpis.total_purchased_seats} seats`;
+      document.getElementById('kpi-seats-sub').innerText = `Đã phân bổ ${kpis.total_allocated_seats} • Khả dụng ${kpis.total_available_seats}`;
+      
+      document.getElementById('kpi-utilization-rate').innerText = `${kpis.overall_utilization_rate}%`;
+      document.getElementById('kpi-utilization-sub').innerText = `${kpis.total_used_seats} seats đang gán cho GV/Lab`;
+
+      document.getElementById('kpi-warning-count').innerText = `${kpis.warning_count} gói`;
+      document.getElementById('kpi-warning-sub').innerText = `${kpis.expiring_soon_pools} sắp hết hạn • ${kpis.expired_pools} đã quá hạn`;
+
+      // Phân bố trạng thái
+      document.getElementById('dist-active').innerText = status_distribution.active;
+      document.getElementById('dist-expiring').innerText = status_distribution.expiring_soon;
+      document.getElementById('dist-expired').innerText = status_distribution.expired;
+
+      // Tỷ lệ sử dụng từng Khoa
+      const deptList = document.getElementById('dept-utilization-list');
+      if (department_utilization.length === 0) {
+        deptList.innerHTML = '<p class="text-xs text-slate-400">Chưa có dữ liệu phân bổ khoa.</p>';
+      } else {
+        deptList.innerHTML = department_utilization.map(d => `
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-slate-800">${d.department_name} (${d.department_code})</span>
+              <span class="font-bold text-slate-700">${d.used_seats} / ${d.allocated_seats} seats (${d.utilization_rate}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+              <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${d.utilization_rate}%"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Cơ cấu chi phí theo Nhà cung cấp
+      const vendorList = document.getElementById('vendor-spending-list');
+      if (vendor_spending.length === 0) {
+        vendorList.innerHTML = '<p class="text-xs text-slate-400">Chưa có dữ liệu hợp đồng.</p>';
+      } else {
+        vendorList.innerHTML = vendor_spending.map(v => `
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+            <div>
+              <div class="font-semibold text-slate-900">${v.vendor_name}</div>
+              <div class="text-slate-400">${v.percentage}% tổng ngân sách</div>
+            </div>
+            <div class="font-bold text-slate-800 text-sm">
+              ${Number(v.total_amount).toLocaleString('vi-VN')} đ
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // 9. NHẬT KÝ KIỂM TOÁN (AUDIT_ALERT_LOGS)
+    async function fetchAuditLogs(actionType = currentAuditFilter, keyword = '') {
+      try {
+        const query = new URLSearchParams();
+        if (actionType && actionType !== 'ALL') query.append('action_type', actionType);
+        if (keyword) query.append('keyword', keyword);
+
+        const res = await authFetch(`/api/audit-logs?${query.toString()}`);
+        const json = await res.json();
+        if (json.success) {
+          currentAuditLogs = json.data;
+          renderAuditLogs(currentAuditLogs);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderAuditLogs(logs) {
+      const tbody = document.getElementById('audit-table-body');
+      if (!tbody) return;
+
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Chưa có bản ghi nhật ký kiểm toán nào phù hợp.</td></tr>';
+        return;
+      }
+
+      const actionColors = {
+        'REVEAL_KEY': 'bg-purple-100 text-purple-800 border-purple-200',
+        'ALLOCATE': 'bg-blue-100 text-blue-800 border-blue-200',
+        'ASSIGN': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        'REVOKE': 'bg-slate-200 text-slate-700 border-slate-300',
+        'RENEW': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        'EXPIRING_ALERT': 'bg-amber-100 text-amber-800 border-amber-200',
+        'EXPIRED_ALERT': 'bg-red-100 text-red-800 border-red-200',
+        'APPROVE_REQUEST': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        'REJECT_REQUEST': 'bg-red-100 text-red-800 border-red-200'
+      };
+
+      tbody.innerHTML = logs.map(l => {
+        const badgeStyle = actionColors[l.action_type] || 'bg-slate-100 text-slate-700 border-slate-200';
+        const userDesc = l.user ? `${l.user.full_name} (${l.user.email})` : 'Hệ thống tự động (Cron)';
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">
+              ${new Date(l.created_at).toLocaleString('vi-VN')}
+            </td>
+            <td class="px-4 py-2 whitespace-nowrap">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${badgeStyle}">
+                ${l.action_type}
+              </span>
+            </td>
+            <td class="px-4 py-2 text-xs font-medium text-slate-800 whitespace-nowrap">
+              ${userDesc}
+            </td>
+            <td class="px-4 py-2 text-xs text-slate-700 max-w-md">
+              ${l.description}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterAuditType(actionType) {
+      currentAuditFilter = actionType;
+      // Cập nhật style nút filter
+      const filters = ['ALL', 'REVEAL_KEY', 'ALLOCATE', 'ASSIGN', 'REVOKE', 'RENEW', 'EXPIRING_ALERT', 'APPROVE_REQUEST'];
+      filters.forEach(f => {
+        const btn = document.getElementById(`filter-audit-${f}`);
+        if (btn) {
+          if (f === actionType) {
+            btn.className = 'px-3 py-1.5 rounded-lg font-medium transition bg-blue-600 text-white';
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200';
+          }
+        }
+      });
+      fetchAuditLogs(actionType, document.getElementById('audit-keyword-input').value);
+    }
+
+    let searchTimer = null;
+    function debounceAuditSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        const kw = document.getElementById('audit-keyword-input').value;
+        fetchAuditLogs(currentAuditFilter, kw);
+      }, 350);
+    }
+
+    // ==============================================================================
+    // CÁC HÀM XỬ LÝ MODAL & TƯƠNG TÁC
+    // ==============================================================================
+
+    // Modal Phân bổ Khoa
+    function openAllocateModal(poolId) {
+      selectedPoolForAlloc = currentPools.find(p => p.license_id === poolId);
+      if (!selectedPoolForAlloc) return;
+
+      document.getElementById('alloc-license-id').value = poolId;
+      document.getElementById('alloc-software-name').value = selectedPoolForAlloc.software.software_name;
+      document.getElementById('alloc-available-seats').innerText = `${selectedPoolForAlloc.available_seats} seats`;
+      document.getElementById('alloc-seats-input').value = '';
+      document.getElementById('alloc-seats-input').max = selectedPoolForAlloc.available_seats;
+      document.getElementById('alloc-error-message').classList.add('hidden');
+      document.getElementById('alloc-submit-btn').disabled = false;
+
+      document.getElementById('allocate-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function validateAllocateSeats(val) {
+      const num = parseInt(val, 10);
+      const max = selectedPoolForAlloc ? selectedPoolForAlloc.available_seats : 0;
+      const errEl = document.getElementById('alloc-error-message');
+      const btn = document.getElementById('alloc-submit-btn');
+
+      if (num > max) {
+        errEl.innerText = `Hạn mức khả dụng của gói chỉ còn ${max} seats. Vui lòng giảm số lượng phân bổ xuống tối đa ${max} seats theo quy định BR01 hoặc đề xuất mua thêm.`;
+        errEl.classList.remove('hidden');
+        btn.disabled = true;
+      } else {
+        errEl.classList.add('hidden');
+        btn.disabled = false;
+      }
+    }
+
+    async function handleAllocateSubmit(e) {
+      e.preventDefault();
+      const license_id = document.getElementById('alloc-license-id').value;
+      const department_id = document.getElementById('alloc-dept-select').value;
+      const allocated_seats = document.getElementById('alloc-seats-input').value;
+
+      try {
+        const res = await authFetch('/api/allocations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ license_id, department_id, allocated_seats })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          closeModal('allocate-modal');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // Modal Cấp phát chi tiết
+    async function openAssignModal() {
+      const allocSelect = document.getElementById('assign-alloc-select');
+      if (currentAllocations.length === 0) {
+        allocSelect.innerHTML = '<option value="">(Chưa có hạn mức nào được phân bổ cho các Khoa)</option>';
+      } else {
+        allocSelect.innerHTML = '<option value="">-- Chọn Quỹ Khoa --</option>' +
+          currentAllocations.map(a => {
+            const avail = a.allocated_seats - a.used_seats;
+            return `<option value="${a.allocation_id}">${a.department.department_name} • ${a.license_pool.software.software_name} (Còn trống: ${avail}/${a.allocated_seats})</option>`;
+          }).join('');
+      }
+
+      document.getElementById('assign-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function openAssignModalWithAlloc(allocId) {
+      openAssignModal();
+      setTimeout(() => {
+        document.getElementById('assign-alloc-select').value = allocId;
+        onAllocationSelected(allocId);
+      }, 100);
+    }
+
+    async function onAllocationSelected(allocId) {
+      const alloc = currentAllocations.find(a => a.allocation_id === allocId);
+      if (!alloc) return;
+
+      const warningEl = document.getElementById('assign-pool-warning');
+      const submitBtn = document.getElementById('assign-submit-btn');
+      if (alloc.license_pool && alloc.license_pool.status === 'EXPIRED') {
+        warningEl.classList.remove('hidden');
+        submitBtn.disabled = true;
+      } else {
+        warningEl.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+
+      const deptId = alloc.department_id;
+      try {
+        const [usersRes, devicesRes] = await Promise.all([
+          authFetch(`/api/departments/${deptId}/users`),
+          authFetch(`/api/departments/${deptId}/devices`)
+        ]);
+        const usersJson = await usersRes.json();
+        const devicesJson = await devicesRes.json();
+
+        const userSelect = document.getElementById('assign-user-select');
+        userSelect.innerHTML = usersJson.data.map(u => `<option value="${u.user_id}">${u.full_name} (${u.email})</option>`).join('');
+
+        const deviceSelect = document.getElementById('assign-device-select');
+        deviceSelect.innerHTML = devicesJson.data.map(d => {
+          const isBroken = ['BROKEN', 'MAINTENANCE', 'DISPOSED'].includes(d.status.toUpperCase());
+          return `<option value="${d.device_id}" ${isBroken ? 'disabled class="text-red-500 bg-red-50"' : ''}>
+            ${d.device_code} — ${d.device_name} [${d.room_location}] ${isBroken ? '(SỰ CỐ - KHÔNG THỂ CẤP)' : ''}
+          </option>`;
+        }).join('');
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function toggleTargetType(type) {
+      if (type === 'USER') {
+        document.getElementById('target-user-group').classList.remove('hidden');
+        document.getElementById('target-device-group').classList.add('hidden');
+      } else {
+        document.getElementById('target-user-group').classList.add('hidden');
+        document.getElementById('target-device-group').classList.remove('hidden');
+      }
+    }
+
+    async function handleAssignSubmit(e) {
+      e.preventDefault();
+      const allocation_id = document.getElementById('assign-alloc-select').value;
+      const target_type = document.querySelector('input[name="target_type"]:checked').value;
+      const assigned_user_id = document.getElementById('assign-user-select').value;
+      const device_id = document.getElementById('assign-device-select').value;
+
+      try {
+        const res = await authFetch('/api/assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            allocation_id,
+            target_type,
+            assigned_user_id: target_type === 'USER' ? assigned_user_id : null,
+            device_id: target_type === 'DEVICE' ? device_id : null,
+            seats_consumed: 1
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          closeModal('assign-modal');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // Thu hồi Seat
+    async function handleRevoke(assignmentId) {
+      if (!confirm('Bạn có chắc chắn muốn thu hồi seat bản quyền này? Hạn mức sẽ được hoàn trả về cho Quỹ của Khoa.')) {
+        return;
+      }
+      try {
+        const res = await authFetch(`/api/assignments/${assignmentId}/revoke`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Thu hồi qua giao diện quản trị phòng ban' })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // Quét Hạn Tự Động
+    async function triggerCronScan() {
+      const btn = document.getElementById('cron-scan-btn');
+      const icon = document.getElementById('cron-scan-icon');
+      if (icon) icon.classList.add('animate-spin');
+      btn.disabled = true;
+
+      try {
+        const res = await authFetch('/api/cron/check-expirations');
+        const json = await res.json();
+        if (json.success) {
+          const s = json.summary;
+          const msg = `⚡ Quét hạn xong: Đã quét ${s.total_scanned} gói. Cập nhật ${s.expired_updated} gói Quá hạn (EXPIRED), ${s.expiring_soon_updated} gói Sắp hết hạn (EXPIRING_SOON).`;
+          showToast(msg, 'success');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi khi chạy quét hạn: ' + err.message, 'error');
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+        btn.disabled = false;
+      }
+    }
+
+    let currentRenewalCheckData = null;
+
+    // Gia hạn Bản quyền (Ràng buộc hợp đồng 2 bước)
+    async function openRenewModal(poolId) {
+      const pool = currentPools.find(p => p.license_id === poolId);
+      if (!pool) return;
+
+      document.getElementById('renew-license-id').value = poolId;
+      document.getElementById('renew-software-name').value = pool.software ? `${pool.software.software_name} (${pool.software.version || 'v1.0'})` : 'Gói bản quyền';
+      document.getElementById('renew-current-expiry').innerText = new Date(pool.expiry_date).toLocaleDateString('vi-VN');
+      
+      const statusText = pool.status === 'ACTIVE' ? 'Đang hoạt động' : (pool.status === 'EXPIRING_SOON' ? 'Sắp hết hạn' : (pool.status === 'DEPLETED' ? 'Hết seat' : 'Đã quá hạn'));
+      const statusColor = pool.status === 'ACTIVE' ? 'text-emerald-600' : (pool.status === 'EXPIRING_SOON' ? 'text-amber-600' : 'text-red-600');
+      const statusEl = document.getElementById('renew-current-status');
+      statusEl.innerText = statusText;
+      statusEl.className = `font-bold text-sm ${statusColor}`;
+
+      // Reset hiển thị về loading
+      document.getElementById('renew-loading-state').classList.remove('hidden');
+      document.getElementById('renew-no-contract-section').classList.add('hidden');
+      document.getElementById('renew-form').classList.add('hidden');
+      document.getElementById('renew-modal').classList.remove('hidden');
+      lucide.createIcons();
+
+      try {
+        const res = await authFetch(`/api/license-pools/${poolId}/renewal-check`);
+        const json = await res.json();
+        document.getElementById('renew-loading-state').classList.add('hidden');
+
+        if (!json.success) {
+          showToast(json.message || 'Lỗi kiểm tra điều kiện gia hạn', 'error');
+          return;
+        }
+
+        currentRenewalCheckData = json.data;
+        const { can_renew, has_pending_request, pending_request, available_contracts } = json.data;
+
+        if (can_renew && available_contracts && available_contracts.length > 0) {
+          // Trường hợp 1: Đã có hợp đồng mua sắm/gia hạn -> Hiển thị Form gia hạn
+          document.getElementById('renew-form').classList.remove('hidden');
+          const contractSelect = document.getElementById('renew-contract-select');
+          contractSelect.innerHTML = available_contracts.map((c) => {
+            const vName = c.vendor ? c.vendor.vendor_name : 'N/A';
+            const cost = Number(c.total_cost).toLocaleString('vi-VN');
+            const signed = new Date(c.signed_date).toLocaleDateString('vi-VN');
+            return `<option value="${c.contract_id}" data-cost="${c.total_cost}">HĐ #${c.contract_number} - ${vName} (${cost} đ - Ký ${signed})</option>`;
+          }).join('');
+
+          // Tự động tính hạn mới (1 năm sau hạn cũ hoặc 1 năm từ hôm nay)
+          const baseDate = new Date(pool.expiry_date) > new Date() ? new Date(pool.expiry_date) : new Date();
+          const suggestedDate = new Date(baseDate);
+          suggestedDate.setFullYear(suggestedDate.getFullYear() + 1);
+          document.getElementById('renew-new-expiry-input').value = suggestedDate.toISOString().split('T')[0];
+          document.getElementById('renew-notes-input').value = 'Gia hạn bản quyền theo Hợp đồng mua sắm được phê duyệt';
+
+          handleRenewContractChange();
+        } else {
+          // Trường hợp 2: Chưa có hợp đồng -> Hiển thị cảnh báo & phiếu đề xuất
+          document.getElementById('renew-no-contract-section').classList.remove('hidden');
+
+          if (has_pending_request && pending_request) {
+            // Đã có phiếu đề xuất đang chờ duyệt
+            document.getElementById('renew-pending-request-box').classList.remove('hidden');
+            document.getElementById('renew-request-form').classList.add('hidden');
+
+            document.getElementById('renew-pending-id').innerText = '#' + pending_request.request_id.slice(0, 8);
+            document.getElementById('renew-pending-dept').innerText = pending_request.department ? pending_request.department.department_name : 'N/A';
+            document.getElementById('renew-pending-user').innerText = pending_request.requester ? pending_request.requester.full_name : 'Đại diện Khoa';
+            document.getElementById('renew-pending-date').innerText = new Date(pending_request.created_at).toLocaleString('vi-VN');
+            document.getElementById('renew-pending-seats').innerText = pending_request.requested_seats + ' seats';
+          } else {
+            // Chưa có phiếu đề xuất -> hiển thị form gửi đề xuất về nhà trường
+            document.getElementById('renew-pending-request-box').classList.add('hidden');
+            document.getElementById('renew-request-form').classList.remove('hidden');
+
+            // Nạp danh sách khoa vào select
+            const deptSelect = document.getElementById('renew-req-dept-select');
+            if (deptSelect && currentDepartments.length > 0) {
+              deptSelect.innerHTML = currentDepartments.map(d => `<option value="${d.department_id}">${d.department_name} (${d.department_code})</option>`).join('');
+            }
+            document.getElementById('renew-req-seats-input').value = pool.total_seats || 20;
+            document.getElementById('renew-req-purpose-input').value = `Đề xuất Nhà trường xem xét gia hạn bản quyền [${pool.software ? pool.software.software_name : 'Phần mềm'}] phục vụ công tác đào tạo và nghiên cứu học kỳ mới.`;
+          }
+        }
+      } catch (err) {
+        document.getElementById('renew-loading-state').classList.add('hidden');
+        showToast('Lỗi khi kiểm tra điều kiện gia hạn: ' + err.message, 'error');
+      }
+
+      lucide.createIcons();
+    }
+
+    function handleRenewContractChange() {
+      const contractSelect = document.getElementById('renew-contract-select');
+      const selectedOption = contractSelect.options[contractSelect.selectedIndex];
+      if (selectedOption) {
+        const cost = selectedOption.getAttribute('data-cost');
+        if (cost) {
+          document.getElementById('renew-cost-input').value = parseInt(cost, 10);
+        }
+      }
+    }
+
+    // Gửi Phiếu Đề Xuất Gia Hạn từ modal
+    async function handleSendRenewalRequestSubmit(e) {
+      e.preventDefault();
+      const license_id = document.getElementById('renew-license-id').value;
+      const pool = currentPools.find(p => p.license_id === license_id);
+      if (!pool) return;
+
+      const department_id = document.getElementById('renew-req-dept-select').value;
+      const requested_seats = parseInt(document.getElementById('renew-req-seats-input').value, 10);
+      const purpose = document.getElementById('renew-req-purpose-input').value;
+
+      const btn = document.getElementById('renew-send-request-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Đang gửi...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            department_id,
+            software_id: pool.software_id,
+            request_type: 'RENEWAL',
+            requested_seats,
+            purpose
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(`Đã gửi Phiếu đề xuất gia hạn về Nhà trường thành công! Mã: #${json.data.request_id.slice(0, 8)}`, 'success');
+          // Tải lại dữ liệu tổng và mở lại modal kiểm tra
+          await loadAllData();
+          openRenewModal(license_id);
+        } else {
+          showToast(json.message || 'Lỗi gửi phiếu đề xuất', 'error');
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Gửi Phiếu Đề Xuất Gia Hạn</span>`;
+          lucide.createIcons();
+        }
+      } catch (err) {
+        showToast('Lỗi gửi đề xuất: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Gửi Phiếu Đề Xuất Gia Hạn</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    // Xác nhận Kích hoạt Gia hạn
+    async function handleRenewSubmit(e) {
+      e.preventDefault();
+      const license_id = document.getElementById('renew-license-id').value;
+      const contract_id = document.getElementById('renew-contract-select').value;
+      const new_expiry_date = document.getElementById('renew-new-expiry-input').value;
+      const renewal_cost = document.getElementById('renew-cost-input').value;
+      const notes = document.getElementById('renew-notes-input').value;
+
+      if (!contract_id) {
+        showToast('Vui lòng chọn Hợp đồng mua sắm/gia hạn đã ký kết.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('renew-submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Đang xử lý gia hạn...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await authFetch(`/api/license-pools/${license_id}/renew`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contract_id,
+            new_expiry_date,
+            renewal_cost,
+            notes,
+            renewed_by: currentUser ? currentUser.user_id : undefined
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          closeModal('renew-modal');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i><span>Kích Hoạt Gia Hạn Bản Quyền</span>`;
+          lucide.createIcons();
+        }
+      } catch (err) {
+        showToast('Lỗi khi gửi yêu cầu gia hạn: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i><span>Kích Hoạt Gia Hạn Bản Quyền</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    let revealCountdownTimer = null;
+    let revealRemainingSeconds = 30;
+
+    // Modal Giải mã Key (BR03: Tự động ghi nhật ký Audit Log & đếm ngược tự ẩn)
+    async function revealKey(poolId, softwareName = 'Bản quyền') {
+      try {
+        const res = await authFetch(`/api/license-pools/${poolId}/reveal-key`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reason: 'Quản trị viên xem khóa bản quyền từ Dashboard',
+            user_id: currentUser ? currentUser.user_id : undefined
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          const keyInput = document.getElementById('revealed-key-text');
+          const subTitle = document.getElementById('reveal-software-subtitle');
+          if (subTitle) subTitle.innerText = `${softwareName} • Mã hóa chuẩn AES-256-CBC`;
+          keyInput.value = json.data.license_key;
+
+          // Cập nhật trạng thái nút sao chép
+          const copyLabel = document.getElementById('copy-key-label');
+          if (copyLabel) copyLabel.innerText = 'Sao chép';
+
+          // Bắt đầu đếm ngược 30 giây tự ẩn bảo mật
+          clearInterval(revealCountdownTimer);
+          revealRemainingSeconds = 30;
+          const timerEl = document.getElementById('reveal-countdown-timer');
+          if (timerEl) timerEl.innerText = `${revealRemainingSeconds}s`;
+
+          revealCountdownTimer = setInterval(() => {
+            revealRemainingSeconds--;
+            if (timerEl) timerEl.innerText = `${revealRemainingSeconds}s`;
+            if (revealRemainingSeconds <= 0) {
+              clearInterval(revealCountdownTimer);
+              keyInput.value = '••••-••••-••••-••••';
+              closeModal('reveal-modal');
+              showToast('Khóa bản quyền đã tự động ẩn lại theo chính sách an toàn thông tin.', 'info');
+            }
+          }, 1000);
+
+          document.getElementById('reveal-modal').classList.remove('hidden');
+          lucide.createIcons();
+          showToast('Đã giải mã thành công và ghi nhận 1 bản ghi vào Nhật ký Kiểm toán (BR03).', 'success');
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Không thể giải mã khóa: ' + err.message, 'error');
+      }
+    }
+
+    // Modal Lập đề xuất mới
+    function openCreateRequestModal() {
+      const deptSelect = document.getElementById('req-dept-select');
+      if (deptSelect && currentDepartments.length > 0) {
+        deptSelect.innerHTML = '<option value="">-- Chọn Khoa đề xuất --</option>' +
+          currentDepartments.map(d => `<option value="${d.department_id}">${d.department_name}</option>`).join('');
+
+        if (currentUser && currentUser.role_code === 'DEPT_REP' && currentUser.department_id) {
+          deptSelect.value = currentUser.department_id;
+          deptSelect.disabled = true;
+        } else {
+          deptSelect.disabled = false;
+        }
+      }
+      document.getElementById('create-request-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    async function handleCreateRequestSubmit(e) {
+      e.preventDefault();
+      const deptSelect = document.getElementById('req-dept-select');
+      const department_id = (currentUser && currentUser.role_code === 'DEPT_REP' && currentUser.department_id)
+        ? currentUser.department_id
+        : deptSelect.value;
+      const software_id = document.getElementById('req-software-select').value;
+      const request_type = document.querySelector('input[name="request_type"]:checked').value;
+      const requested_seats = parseInt(document.getElementById('req-seats-input').value, 10);
+      const purpose = document.getElementById('req-purpose-input').value;
+
+      try {
+        const res = await authFetch('/api/requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            department_id,
+            software_id,
+            request_type,
+            requested_seats,
+            purpose,
+            requested_by: currentUser ? currentUser.user_id : undefined
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          closeModal('create-request-modal');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // Duyệt đề xuất
+    async function handleApproveRequest(requestId) {
+      if (!confirm('Bạn có chắc chắn muốn phê duyệt phiếu đề xuất bản quyền này?')) {
+        return;
+      }
+      try {
+        const res = await authFetch(`/api/requests/${requestId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            notes: 'Quản trị viên đã phê duyệt qua Dashboard',
+            approved_by: currentUser ? currentUser.user_id : undefined
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi duyệt: ' + err.message, 'error');
+      }
+    }
+
+    // Từ chối đề xuất
+    function openRejectRequestModal(requestId) {
+      document.getElementById('reject-request-id').value = requestId;
+      document.getElementById('reject-reason-input').value = '';
+      document.getElementById('reject-request-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    async function handleRejectRequestSubmit(e) {
+      e.preventDefault();
+      const requestId = document.getElementById('reject-request-id').value;
+      const rejection_reason = document.getElementById('reject-reason-input').value;
+
+      try {
+        const res = await authFetch(`/api/requests/${requestId}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rejection_reason,
+            approved_by: currentUser ? currentUser.user_id : undefined
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(json.message, 'success');
+          closeModal('reject-request-modal');
+          await loadAllData();
+        } else {
+          showToast(json.message, 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi từ chối: ' + err.message, 'error');
+      }
+    }
+
+    function copyRevealedKey() {
+      const input = document.getElementById('revealed-key-text');
+      if (!input || !input.value || input.value.includes('•')) return;
+      navigator.clipboard.writeText(input.value);
+      const label = document.getElementById('copy-key-label');
+      if (label) {
+        label.innerText = 'Đã chép!';
+        setTimeout(() => { label.innerText = 'Sao chép'; }, 2000);
+      }
+      showToast('Đã sao chép khóa kích hoạt vào bộ nhớ tạm thành công.', 'success');
+    }
+
+    function closeModal(modalId) {
+      if (modalId === 'reveal-modal') {
+        clearInterval(revealCountdownTimer);
+        const input = document.getElementById('revealed-key-text');
+        if (input) input.value = '';
+      }
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-slate-900');
+      const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+      toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-xl text-xs font-medium flex items-center space-x-2.5 transition-all transform duration-300 pointer-events-auto border border-white/10`;
+      toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 flex-shrink-0"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 4500);
+    }
+  </script>
+</body>
+</html>

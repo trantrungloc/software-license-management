@@ -1,0 +1,36 @@
+{
+  "name": "salm-software-license-management",
+  "version": "1.0.0",
+  "description": "Hệ thống Quản lý Hạn sử dụng Bản quyền Phần mềm của các Phòng ban trong Trường học (SALM)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "build": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "seed": "node prisma/seed.js"
+  },
+  "keywords": [
+    "salm",
+    "license-management",
+    "prisma",
+    "postgresql",
+    "neon",
+    "express"
+  ],
+  "author": "SALM Development Team",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
